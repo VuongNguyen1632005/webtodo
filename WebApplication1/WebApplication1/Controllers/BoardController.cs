@@ -222,6 +222,50 @@ namespace WebApplication1.Controllers
             }
         }
 
+        // 8. Cập nhật vị trí Cột (Kéo thả cột)
+        [HttpPost]
+        public JsonResult UpdateColumnPosition(int[] columnIds)
+        {
+            try
+            {
+                int thuTu = 0;
+                foreach (var id in columnIds)
+                {
+                    var cot = db.Cots.Find(id);
+                    if (cot != null)
+                    {
+                        cot.ThuTu = thuTu;
+                    }
+                    thuTu++;
+                }
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+        // 9. Cập nhật trạng thái Hoàn thành (Checkbox)
+        [HttpPost]
+        public JsonResult UpdateCardCompletion(int id, bool status)
+        {
+            try
+            {
+                var the = db.Thes.Find(id);
+                if (the != null)
+                {
+                    the.DaHoanThanh = status; // Lưu trạng thái (true/false)
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+            }
+            catch { }
+            return Json(new { success = false });
+        }
+
+
 
     }
 }
