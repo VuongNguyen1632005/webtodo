@@ -1,0 +1,35 @@
+﻿@model IEnumerable<WebApplication1.Models.Bang>
+
+@{
+    ViewBag.Title = "Bảng của tôi";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🗂️ Các Bảng Của Tôi</h2>
+        <button class="btn btn-primary">+ Tạo bảng mới</button>
+    </div>
+
+    <div class="row">
+        @if (Model.Any())
+        {
+            foreach (var bang in Model)
+            {
+                <div class="col-md-3 mb-4">
+                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm" ...>
+                       style="background-color: @bang.MauNen; height: 120px;">
+                        <div class="card-body">
+                            <h5 class="card-title font-weight-bold">@bang.TenBang</h5>
+                        </div>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center text-muted">
+                <p>Bạn chưa có bảng nào. Hãy tạo bảng mới!</p>
+            </div>
+        }
+    </div>
+</div>

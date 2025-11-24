@@ -1,0 +1,66 @@
+﻿@{
+    Layout = null; /* Trang login không cần menu/header */
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Đăng nhập Trello Clone</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #F9FAFC;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 400px;
+        }
+
+        .btn-trello {
+            background-color: #5AAC44;
+            color: white;
+            font-weight: bold;
+        }
+
+            .btn-trello:hover {
+                background-color: #519839;
+                color: white;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h3 class="text-center mb-4" style="color: #0079bf;">Trello Clone</h3>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form action="/Account/Login" method="post">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" class="form-control" required placeholder="Nhập email..." />
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" name="password" class="form-control" required placeholder="Nhập mật khẩu..." />
+            </div>
+            <button type="submit" class="btn btn-trello btn-block">Đăng Nhập</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="/Account/Register">Chưa có tài khoản? Đăng ký</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,218 @@
+﻿@model WebApplication1.Models.Bang
+
+@{
+    ViewBag.Title = Model.TenBang;
+}
+
+<style>
+    /* Làm cho container tràn màn hình và có thanh cuộn ngang */
+    .board-container {
+        display: flex;
+        overflow-x: auto;
+        height: calc(100vh - 100px); /* Trừ đi chiều cao header */
+        padding-bottom: 20px;
+    }
+
+    /* Giao diện từng Cột */
+    .board-column {
+        min-width: 300px;
+        max-width: 300px;
+        background-color: #ebecf0;
+        margin-right: 15px;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
+    }
+
+    /* Header của cột (Tên cột) */
+    .column-header {
+        padding: 10px 15px;
+        font-weight: bold;
+        cursor: grab;
+    }
+
+    /* Vùng chứa các thẻ (Cho phép cuộn dọc nếu nhiều thẻ) */
+    .card-list {
+        padding: 0 10px 10px 10px;
+        overflow-y: auto;
+        flex-grow: 1;
+        min-height: 50px; /* Để dễ thả thẻ vào cột rỗng */
+    }
+
+    /* Giao diện từng Thẻ (Card) */
+    .kanban-card {
+        background-color: white;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 3px;
+        box-shadow: 0 1px 0 rgba(9,30,66,.25);
+        cursor: pointer;
+    }
+
+        .kanban-card:hover {
+            background-color: #f4f5f7;
+        }
+</style>
+
+<div class="container-fluid mb-3">
+    <h3 class="text-white" style="text-shadow: 1px 1px 2px #000;">@Model.TenBang</h3>
+</div>
+
+<div class="container-fluid">
+    <div class="board-container">
+
+        @if (Model.Cots != null)
+        {
+            // Sắp xếp cột theo thứ tự (ThuTu)
+            foreach (var cot in Model.Cots.OrderBy(c => c.ThuTu))
+            {
+                <div class="board-column">
+                    <div class="column-header">
+                        @cot.TenCot <span class="badge badge-secondary float-right">@cot.Thes.Count</span>
+                    </div>
+
+                    <div class="card-list" id="col-@cot.MaCot">
+                        @if (cot.Thes != null)
+                        {
+                            // Sắp xếp thẻ theo thứ tự
+                            foreach (var the in cot.Thes.OrderBy(t => t.ThuTu))
+                            {
+                                <div class="kanban-card" id="card_@the.MaThe" data-id="@the.MaThe">
+                                    @the.TieuDe
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="p-2 text-center text-muted add-card-btn" data-column-id="@cot.MaCot" style="cursor:pointer; border-top: 1px solid #ddd;">
+                        + Thêm thẻ khác
+                    </div>
+                </div>
+            }
+        }
+
+        <div class="board-column" style="background: rgba(255,255,255,0.2); color: white; justify-content: center; align-items: center; min-height: 50px; height: 50px; cursor: pointer;">
+            + Thêm danh sách khác
+        </div>
+
+    </div>
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Đổi màu nền body
+        $("body").css("background-color", "@Model.MauNen");
+
+        $(document).ready(function () {
+
+            // --- LOGIC 1: KÉO THẢ ---
+            $(".card-list").sortable({
+                connectWith: ".card-list",
+                placeholder: "ui-state-highlight",
+                items: ".kanban-card",
+                stop: function (event, ui) {
+                    var item = ui.item;
+                    var cardId = item.attr("data-id");
+                    var newColumnId = item.closest(".card-list").attr("id").replace("col-", "");
+                    var sortedIds = $(this).sortable("toArray", { attribute: "data-id" });
+
+                    $.ajax({
+                        url: '/Board/MoveCard',
+                        type: 'POST',
+                        data: { maThe: cardId, maCotMoi: newColumnId, cardIds: sortedIds }
+                    });
+                }
+            }).disableSelection();
+
+            // --- LOGIC 2: THÊM THẺ MỚI ---
+            $(".add-card-btn").click(function () {
+                var columnId = $(this).data("column-id");
+                var title = prompt("Nhập nội dung công việc:");
+
+                if (title) {
+                    $.ajax({
+                        url: '/Board/CreateCard',
+                        type: 'POST',
+                        data: { maCot: columnId, noiDung: title },
+                        success: function (res) {
+                            if (res.success) {
+                                var newHtml = '<div class="kanban-card" id="card_' + res.maThe + '" data-id="' + res.maThe + '">' + title + '</div>';
+                                $("#col-" + columnId).append(newHtml);
+                            } else {
+                                alert("Lỗi không thêm được!");
+                            }
+                        }
+                    });
+                }
+            });
+
+            // --- LOGIC 3: CLICK VÀO THẺ ĐỂ SỬA ---
+            // Sự kiện click
+            $(document).on("click", ".kanban-card", function () {
+                var cardId = $(this).data("id");
+
+                // Gọi AJAX lấy dữ liệu
+                $.get("/Board/GetCardDetails/" + cardId, function (data) {
+                    if (data) {
+                        $("#modalCardId").val(data.id);
+                        $("#modalCardTitle").val(data.title);
+                        $("#modalCardDesc").val(data.desc);
+
+                        // Lệnh mở Modal
+                        $("#cardModal").modal("show");
+                    }
+                });
+            });
+
+            // Nút Lưu
+            $("#btnSaveCard").click(function () {
+                var id = $("#modalCardId").val();
+                var title = $("#modalCardTitle").val();
+                var desc = $("#modalCardDesc").val();
+
+                $.post("/Board/UpdateCardDetails", { id: id, title: title, desc: desc }, function (res) {
+                    if (res.success) {
+                        $("#card_" + id).text(title);
+                        $("#cardModal").modal("hide");
+                    }
+                });
+            });
+
+            // Nút Xóa
+            $("#btnDeleteCard").click(function () {
+                if (confirm("Bạn có chắc muốn xóa thẻ này không?")) {
+                    var id = $("#modalCardId").val();
+                    $.post("/Board/DeleteCard", { id: id }, function (res) {
+                        if (res.success) {
+                            $("#card_" + id).remove();
+                            $("#cardModal").modal("hide");
+                        }
+                    });
+                }
+            });
+
+        }); // Kết thúc document.ready
+    </script>
+
+    <style>
+        .ui-state-highlight {
+            height: 40px;
+            background-color: rgba(0,0,0,0.1);
+            border: 1px dashed #ccc;
+            margin-bottom: 10px;
+        }
+    </style>
+}
+
+<style>
+    .ui-state-highlight {
+        height: 40px;
+        background-color: rgba(0,0,0,0.1);
+        border: 1px dashed #ccc;
+        margin-bottom: 10px;
+    }
+</style>
+}
