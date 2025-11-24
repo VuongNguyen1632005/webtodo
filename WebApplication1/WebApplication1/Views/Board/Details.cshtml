@@ -79,7 +79,20 @@
                             foreach (var the in cot.Thes.OrderBy(t => t.ThuTu))
                             {
                                 <div class="kanban-card" id="card_@the.MaThe" data-id="@the.MaThe">
-                                    @the.TieuDe
+                                    <div class="card-title font-weight-bold mb-1">@the.TieuDe</div>
+
+                                    @if (the.HanChot != null)
+                                    {
+                                        // Kiểm tra nếu quá hạn thì màu đỏ, chưa thì màu xám
+                                        var deadlineClass = (the.HanChot < DateTime.Now) ? "text-danger font-weight-bold" : "text-muted";
+
+                                        <div class="card-deadline" style="font-size: 12px;">
+                                            <i class="fa fa-clock-o"></i>
+                                            <span class="@deadlineClass">
+                                                @the.HanChot.Value.ToString("dd/MM")
+                                            </span>
+                                        </div>
+                                    }
                                 </div>
                             }
                         }
@@ -92,15 +105,53 @@
             }
         }
 
-        <div class="board-column" style="background: rgba(255,255,255,0.2); color: white; justify-content: center; align-items: center; min-height: 50px; height: 50px; cursor: pointer;">
+        <div class="board-column" id="btnAddColumn" style="background: rgba(255,255,255,0.2); ... (giữ nguyên style cũ) ...">
             + Thêm danh sách khác
         </div>
 
     </div>
 </div>
+<div class="modal fade" id="cardModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: none;">
+                <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ...">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalCardId">
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Mô tả</label>
+                            <textarea id="modalCardDesc" class="form-control" rows="5" placeholder="Thêm mô tả chi tiết..."></textarea>
+                        </div>
+
+                      
+
+                        <div class="form-group mt-3">
+                            <label class="font-weight-bold">📅 Hạn chót (Deadline)</label>
+                            <input type="date" id="modalCardDeadline" class="form-control">
+                        </div>
+                        <button type="button" class="btn btn-success mt-2" id="btnSaveCard">Lưu thay đổi</button>
+                        
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="font-weight-bold">Thao tác</label>
+                        <button class="btn btn-danger btn-block" id="btnDeleteCard">Xóa thẻ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
         // Đổi màu nền body
@@ -108,7 +159,9 @@
 
         $(document).ready(function () {
 
-            // --- LOGIC 1: KÉO THẢ ---
+            // ==============================================================
+            // LOGIC 1: KÉO THẢ (ĐÃ SỬA LỖI CỘT TRỐNG & ARRAY)
+            // ==============================================================
             $(".card-list").sortable({
                 connectWith: ".card-list",
                 placeholder: "ui-state-highlight",
@@ -116,79 +169,130 @@
                 stop: function (event, ui) {
                     var item = ui.item;
                     var cardId = item.attr("data-id");
-                    var newColumnId = item.closest(".card-list").attr("id").replace("col-", "");
-                    var sortedIds = $(this).sortable("toArray", { attribute: "data-id" });
 
+                    // Tìm cột mới mà thẻ vừa rớt xuống (Fix lỗi lấy nhầm cột cũ)
+                    var newColumn = item.closest(".card-list");
+                    var newColumnId = newColumn.attr("id").replace("col-", "");
+
+                    // Lấy danh sách ID thẻ trong cột MỚI
+                    var sortedIds = newColumn.sortable("toArray", { attribute: "data-id" });
+
+                    // Gửi về Server
                     $.ajax({
                         url: '/Board/MoveCard',
                         type: 'POST',
-                        data: { maThe: cardId, maCotMoi: newColumnId, cardIds: sortedIds }
+                        traditional: true, // Fix lỗi gửi mảng int[]
+                        data: { maThe: cardId, maCotMoi: newColumnId, cardIds: sortedIds },
+                        success: function(res) {
+                            if(!res.success) console.log("Lỗi server: " + res.message);
+                        },
+                        error: function() { console.log("Lỗi kết nối"); }
                     });
                 }
             }).disableSelection();
 
-            // --- LOGIC 2: THÊM THẺ MỚI ---
+
+            // ==============================================================
+            // LOGIC 2: THÊM THẺ MỚI
+            // ==============================================================
             $(".add-card-btn").click(function () {
                 var columnId = $(this).data("column-id");
                 var title = prompt("Nhập nội dung công việc:");
 
                 if (title) {
-                    $.ajax({
-                        url: '/Board/CreateCard',
-                        type: 'POST',
-                        data: { maCot: columnId, noiDung: title },
-                        success: function (res) {
-                            if (res.success) {
-                                var newHtml = '<div class="kanban-card" id="card_' + res.maThe + '" data-id="' + res.maThe + '">' + title + '</div>';
-                                $("#col-" + columnId).append(newHtml);
-                            } else {
-                                alert("Lỗi không thêm được!");
-                            }
+                    $.post('/Board/CreateCard', { maCot: columnId, noiDung: title }, function(res) {
+                         if (res.success) {
+                            var newHtml = '<div class="kanban-card" id="card_' + res.maThe + '" data-id="' + res.maThe + '">' + title + '</div>';
+                            $("#col-" + columnId).append(newHtml);
+                        } else {
+                            alert("Lỗi không thêm được thẻ!");
                         }
                     });
                 }
             });
 
-            // --- LOGIC 3: CLICK VÀO THẺ ĐỂ SỬA ---
-            // Sự kiện click
+            // ==============================================================
+            // LOGIC 3: CLICK VÀO THẺ ĐỂ SỬA (ĐÃ CẬP NHẬT DEADLINE)
+            // ==============================================================
             $(document).on("click", ".kanban-card", function () {
                 var cardId = $(this).data("id");
 
-                // Gọi AJAX lấy dữ liệu
-                $.get("/Board/GetCardDetails/" + cardId, function (data) {
-                    if (data) {
-                        $("#modalCardId").val(data.id);
-                        $("#modalCardTitle").val(data.title);
-                        $("#modalCardDesc").val(data.desc);
+                $.ajax({
+                    url: "/Board/GetCardDetails/" + cardId,
+                    type: "GET",
+                    success: function (data) {
+                        if (data && data.success) {
+                            $("#modalCardId").val(data.id);
+                            $("#modalCardTitle").val(data.title);
+                            $("#modalCardDesc").val(data.desc);
 
-                        // Lệnh mở Modal
-                        $("#cardModal").modal("show");
+                            // 👇 Gán ngày vào ô input (Mới)
+                            $("#modalCardDeadline").val(data.deadline);
+
+                            $("#cardModal").modal("show");
+                        } else {
+                            alert("Không tìm thấy thông tin thẻ!");
+                        }
                     }
                 });
             });
 
-            // Nút Lưu
+            // Nút Lưu trong Modal (Phiên bản nâng cấp: Cập nhật cả Ngày)
             $("#btnSaveCard").click(function () {
                 var id = $("#modalCardId").val();
                 var title = $("#modalCardTitle").val();
                 var desc = $("#modalCardDesc").val();
+                var deadline = $("#modalCardDeadline").val(); // Lấy ngày từ input
 
-                $.post("/Board/UpdateCardDetails", { id: id, title: title, desc: desc }, function (res) {
+                $.post("/Board/UpdateCardDetails", { id: id, title: title, desc: desc, deadline: deadline }, function (res) {
                     if (res.success) {
-                        $("#card_" + id).text(title);
                         $("#cardModal").modal("hide");
+
+                        // --- CẬP NHẬT GIAO DIỆN THẺ MÀ KHÔNG CẦN F5 ---
+
+                        // 1. Tạo HTML cho phần ngày tháng
+                        var deadlineHtml = "";
+                        if (deadline) {
+                            // Tính toán đơn giản để xem quá hạn chưa (cho icon màu đỏ)
+                            var dateVal = new Date(deadline);
+                            var today = new Date();
+                            var isOverdue = dateVal < today;
+                            var colorClass = isOverdue ? "text-danger font-weight-bold" : "text-muted";
+
+                            // Format ngày ra dd/mm (đơn giản hóa)
+                            var day = dateVal.getDate().toString().padStart(2, '0');
+                            var month = (dateVal.getMonth() + 1).toString().padStart(2, '0');
+
+                            deadlineHtml = `<div class="card-deadline" style="font-size: 12px;">
+                                                <i class="fa fa-clock-o"></i> 
+                                                <span class="${colorClass}">${day}/${month}</span>
+                                            </div>`;
+                        }
+
+                        // 2. Vẽ lại nội dung thẻ
+                        var newCardContent = `<div class="card-title font-weight-bold mb-1">${title}</div>` + deadlineHtml;
+
+                        $("#card_" + id).html(newCardContent);
+                        // ------------------------------------------------
+
+                    } else {
+                        alert("Lỗi khi lưu!");
                     }
                 });
             });
 
-            // Nút Xóa
-            $("#btnDeleteCard").click(function () {
-                if (confirm("Bạn có chắc muốn xóa thẻ này không?")) {
-                    var id = $("#modalCardId").val();
-                    $.post("/Board/DeleteCard", { id: id }, function (res) {
+
+            // ==============================================================
+            // LOGIC 4: THÊM CỘT MỚI
+            // ==============================================================
+            $("#btnAddColumn").click(function () {
+                var name = prompt("Nhập tên danh sách mới:");
+                if (name) {
+                    $.post("/Board/CreateColumn", { maBang: @Model.MaBang, tenCot: name }, function (res) {
                         if (res.success) {
-                            $("#card_" + id).remove();
-                            $("#cardModal").modal("hide");
+                            location.reload();
+                        } else {
+                            alert("Lỗi không tạo được cột!");
                         }
                     });
                 }
@@ -205,6 +309,26 @@
             margin-bottom: 10px;
         }
     </style>
+}
+
+<style>
+    .ui-state-highlight {
+        height: 40px;
+        background-color: rgba(0,0,0,0.1);
+        border: 1px dashed #ccc;
+        margin-bottom: 10px;
+    }
+</style>
+}
+
+<style>
+    .ui-state-highlight {
+        height: 40px;
+        background-color: rgba(0,0,0,0.1);
+        border: 1px dashed #ccc;
+        margin-bottom: 10px;
+    }
+</style>
 }
 
 <style>

@@ -88,57 +88,73 @@ namespace WebApplication1.Controllers
         }
 
         // 3. (QUAN TRỌNG) Cập nhật khi kéo sang cột KHÁC
+        // 3. SỬA LẠI HÀM MoveCard CHO AN TOÀN
         [HttpPost]
         public JsonResult MoveCard(int maThe, int maCotMoi, int[] cardIds)
         {
             try
             {
-                // Tìm thẻ và đổi cột
+                // 1. Cập nhật cột mới cho thẻ
                 var the = db.Thes.Find(maThe);
                 if (the != null)
                 {
                     the.MaCot = maCotMoi;
                 }
 
-                // Sau đó cập nhật thứ tự (Giống hàm trên)
-                int thuTu = 0;
-                foreach (var id in cardIds)
+                // 2. Cập nhật thứ tự (QUAN TRỌNG: Phải kiểm tra null để tránh lỗi crash)
+                if (cardIds != null)
                 {
-                    var t = db.Thes.Find(id);
-                    if (t != null) t.ThuTu = thuTu;
-                    thuTu++;
+                    int thuTu = 0;
+                    foreach (var id in cardIds)
+                    {
+                        var t = db.Thes.Find(id);
+                        if (t != null)
+                        {
+                            t.ThuTu = thuTu;
+                            // Đảm bảo thẻ cũng được cập nhật cột (phòng hờ)
+                            t.MaCot = maCotMoi;
+                        }
+                        thuTu++;
+                    }
                 }
 
                 db.SaveChanges();
                 return Json(new { success = true });
             }
-            catch
+            catch (Exception ex)
             {
-                return Json(new { success = false });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
         // 4. Lấy chi tiết thẻ
+        // 4. Lấy chi tiết thẻ (Đã thêm Deadline)
         [HttpGet]
         public JsonResult GetCardDetails(int id)
         {
-            var the = db.Thes.Find(id);
-            if (the != null)
+            try
             {
-                // Trả về dữ liệu JSON sạch
-                return Json(new
+                var the = db.Thes.Find(id);
+                if (the != null)
                 {
-                    id = the.MaThe,
-                    title = the.TieuDe,
-                    desc = the.MoTa ?? "" // Nếu null thì trả về rỗng
-                }, JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        id = the.MaThe,
+                        title = the.TieuDe,
+                        desc = the.MoTa ?? "",
+                        // Chuyển ngày sang định dạng yyyy-MM-dd để gán vào ô input type="date"
+                        deadline = the.HanChot.HasValue ? the.HanChot.Value.ToString("yyyy-MM-dd") : ""
+                    }, JsonRequestBehavior.AllowGet);
+                }
             }
-            return Json(null);
+            catch { }
+            return Json(new { success = false }, JsonRequestBehavior.AllowGet);
         }
 
-        // 5. Cập nhật thẻ (Sửa tên, mô tả)
+        // 5. Cập nhật thẻ (Đã thêm Deadline)
         [HttpPost]
-        public JsonResult UpdateCardDetails(int id, string title, string desc)
+        public JsonResult UpdateCardDetails(int id, string title, string desc, string deadline)
         {
             try
             {
@@ -147,6 +163,13 @@ namespace WebApplication1.Controllers
                 {
                     the.TieuDe = title;
                     the.MoTa = desc;
+
+                    // Xử lý lưu ngày
+                    if (!string.IsNullOrEmpty(deadline))
+                        the.HanChot = DateTime.Parse(deadline);
+                    else
+                        the.HanChot = null; // Người dùng xóa deadline
+
                     db.SaveChanges();
                     return Json(new { success = true });
                 }
@@ -154,7 +177,6 @@ namespace WebApplication1.Controllers
             catch { }
             return Json(new { success = false });
         }
-
         // 6. Xóa thẻ
         [HttpPost]
         public JsonResult DeleteCard(int id)
@@ -173,7 +195,32 @@ namespace WebApplication1.Controllers
             return Json(new { success = false });
         }
 
+        // 7. Tạo cột mới
+        [HttpPost]
+        public JsonResult CreateColumn(int maBang, string tenCot)
+        {
+            try
+            {
+                var cotMoi = new Cot();
+                cotMoi.MaBang = maBang;
+                cotMoi.TenCot = tenCot;
 
+                // Tính thứ tự: Cho nằm cuối cùng
+                var soLuongCot = db.Cots.Count(c => c.MaBang == maBang);
+                cotMoi.ThuTu = soLuongCot;
+
+                cotMoi.KichHoat = true; // Mặc định là hiện
+
+                db.Cots.Add(cotMoi);
+                db.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
 
 
     }
