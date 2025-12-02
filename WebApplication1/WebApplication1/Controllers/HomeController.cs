@@ -22,12 +22,24 @@ namespace WebApplication1.Controllers
 
             if (user != null)
             {
-                // 3. Chỉ lấy những Bảng thuộc về người này
-                var danhSachBang = db.Bangs
+                // 3. Lấy những Bảng thuộc về người này (chủ sở hữu)
+                var bangCuaToi = db.Bangs
                                      .Where(b => b.MaNguoiSoHuu == user.MaTaiKhoan)
                                      .ToList();
 
-                return View(danhSachBang);
+                // 4. Lấy những Bảng được chia sẻ với người này
+                var bangDuocChiaSe = db.ThanhVienBangs
+                                        .Where(tv => tv.MaTaiKhoan == user.MaTaiKhoan)
+                                        .Select(tv => tv.Bang)
+                                        .ToList();
+
+                // Truyền riêng 2 danh sách xuống View
+                ViewBag.BangCuaToi = bangCuaToi;
+                ViewBag.BangDuocChiaSe = bangDuocChiaSe;
+
+                // Trả về tất cả các bảng (gộp lại) cho View model
+                var tatCaBang = bangCuaToi.Concat(bangDuocChiaSe).ToList();
+                return View(tatCaBang);
             }
 
             return View(new List<Bang>());

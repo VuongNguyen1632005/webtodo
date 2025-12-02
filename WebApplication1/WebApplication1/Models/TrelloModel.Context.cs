@@ -34,5 +34,6 @@ namespace WebApplication1.Models
         public virtual DbSet<sysdiagram> sysdiagrams { get; set; }
         public virtual DbSet<TaiKhoan> TaiKhoans { get; set; }
         public virtual DbSet<The> Thes { get; set; }
+        public virtual DbSet<ThanhVienBang> ThanhVienBangs { get; set; }
     }
 }

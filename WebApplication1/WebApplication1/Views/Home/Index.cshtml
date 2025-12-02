@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = "Bảng của tôi";
+    var bangCuaToi = ViewBag.BangCuaToi as List<WebApplication1.Models.Bang> ?? new List<WebApplication1.Models.Bang>();
+    var bangDuocChiaSe = ViewBag.BangDuocChiaSe as List<WebApplication1.Models.Bang> ?? new List<WebApplication1.Models.Bang>();
 }
 
 <div class="container mt-4">
@@ -11,12 +13,12 @@
     </div>
 
     <div class="row">
-        @if (Model.Any())
+        @if (bangCuaToi.Any())
         {
-            foreach (var bang in Model)
+            foreach (var bang in bangCuaToi)
             {
                 <div class="col-md-3 mb-4">
-                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm" ...>
+                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm"
                        style="background-color: @bang.MauNen; height: 120px;">
                         <div class="card-body">
                             <h5 class="card-title font-weight-bold">@bang.TenBang</h5>
@@ -32,4 +34,27 @@
             </div>
         }
     </div>
+
+    @if (bangDuocChiaSe.Any())
+    {
+        <hr class="my-4">
+        <h3>📤 Bảng Được Chia Sẻ</h3>
+        <div class="row mt-3">
+            @foreach (var bang in bangDuocChiaSe)
+            {
+                <div class="col-md-3 mb-4">
+                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm"
+                       style="background-color: @bang.MauNen; height: 120px; position: relative;">
+                        <div class="card-body">
+                            <h5 class="card-title font-weight-bold">@bang.TenBang</h5>
+                            <small class="text-white-50">Chủ sở hữu: @bang.TaiKhoan.HoTen</small>
+                        </div>
+                        <span class="badge badge-light" style="position: absolute; top: 5px; right: 5px;">
+                            <i class="fa fa-share-alt"></i>
+                        </span>
+                    </a>
+                </div>
+            }
+        </div>
+    }
 </div>

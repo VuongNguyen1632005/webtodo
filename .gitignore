@@ -9,3 +9,7 @@ obj/
 # Bỏ qua các file cấu hình người dùng
 *.user
 *.suo
+
+# Bỏ qua NuGet executables và packages
+.nuget/
+packages/

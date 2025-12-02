@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = Model.TenBang;
+    var userRole = ViewBag.UserRole as string ?? "viewer";
+    var canEdit = userRole == "owner" || userRole == "editor";
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -87,10 +89,48 @@
     .small {
         font-size: 12px;
     }
+
+    .member-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .member-item:last-child {
+        border-bottom: none;
+    }
+
+    .member-info {
+        flex-grow: 1;
+    }
+
+    .member-actions {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
 </style>
 
 <div class="container-fluid mb-3">
-    <h3 class="text-white" style="text-shadow: 1px 1px 2px #000;">@Model.TenBang</h3>
+    <div class="d-flex justify-content-between align-items-center">
+        <h3 class="text-white" style="text-shadow: 1px 1px 2px #000;">@Model.TenBang</h3>
+        <div>
+            @if (userRole == "owner")
+            {
+                <button class="btn btn-info" data-toggle="modal" data-target="#shareModal">
+                    <i class="fa fa-share-alt"></i> Chia sẻ
+                </button>
+            }
+            @if (userRole != "owner")
+            {
+                <span class="badge badge-light" style="font-size: 14px;">
+                    @(userRole == "editor" ? "Có thể sửa" : "Chỉ xem")
+                </span>
+            }
+        </div>
+    </div>
 </div>
 
 <div class="container-fluid">
@@ -115,6 +155,7 @@
                                         <div class="me-2 pt-1" style="margin-right: 10px;">
                                             <input type="checkbox" class="card-checkbox stop-prop" data-id="@the.MaThe"
                                                    @(the.DaHoanThanh.GetValueOrDefault() ? "checked" : "")
+                                                   @(!canEdit ? "disabled" : "")
                                                    style="cursor: pointer; width: 18px; height: 18px;">
                                         </div>
 
@@ -151,25 +192,32 @@
                         }
                     </div>
 
-                    <div class="p-2 text-center text-muted add-card-btn" data-column-id="@cot.MaCot" style="cursor:pointer; border-top: 1px solid #ddd;">
-                        + Thêm thẻ khác
-                    </div>
+                    @if (canEdit)
+                    {
+                        <div class="p-2 text-center text-muted add-card-btn" data-column-id="@cot.MaCot" style="cursor:pointer; border-top: 1px solid #ddd;">
+                            + Thêm thẻ khác
+                        </div>
+                    }
                 </div>
             }
         }
 
-        <div class="board-column" id="btnAddColumn" style="background: rgba(255,255,255,0.2); color: white; justify-content: center; align-items: center; min-height: 50px; height: 50px; cursor: pointer;">
-            + Thêm danh sách khác
-        </div>
+        @if (canEdit)
+        {
+            <div class="board-column" id="btnAddColumn" style="background: rgba(255,255,255,0.2); color: white; justify-content: center; align-items: center; min-height: 50px; height: 50px; cursor: pointer;">
+                + Thêm danh sách khác
+            </div>
+        }
 
     </div>
 </div>
 
+<!-- Modal Chi tiết thẻ -->
 <div class="modal fade" id="cardModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header" style="border-bottom: none;">
-                <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ...">
+                <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ..." @(!canEdit ? "readonly" : "")>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -181,22 +229,60 @@
                     <div class="col-md-8">
                         <div class="form-group">
                             <label class="font-weight-bold">Mô tả</label>
-                            <textarea id="modalCardDesc" class="form-control" rows="5" placeholder="Thêm mô tả chi tiết..."></textarea>
+                            <textarea id="modalCardDesc" class="form-control" rows="5" placeholder="Thêm mô tả chi tiết..." @(!canEdit ? "readonly" : "")></textarea>
                         </div>
 
                         <div class="form-group mt-3">
                             <label class="font-weight-bold">📅 Hạn chót (Deadline)</label>
-                            <input type="date" id="modalCardDeadline" class="form-control">
+                            <input type="date" id="modalCardDeadline" class="form-control" @(!canEdit ? "readonly" : "")>
                         </div>
 
-                        <button type="button" class="btn btn-success mt-2" id="btnSaveCard">Lưu thay đổi</button>
+                        @if (canEdit)
+                        {
+                            <button type="button" class="btn btn-success mt-2" id="btnSaveCard">Lưu thay đổi</button>
+                        }
                     </div>
 
                     <div class="col-md-4">
-                        <label class="font-weight-bold">Thao tác</label>
-                        <button class="btn btn-danger btn-block" id="btnDeleteCard">Xóa thẻ</button>
+                        @if (canEdit)
+                        {
+                            <label class="font-weight-bold">Thao tác</label>
+                            <button class="btn btn-danger btn-block" id="btnDeleteCard">Xóa thẻ</button>
+                        }
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chia sẻ bảng -->
+<div class="modal fade" id="shareModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chia sẻ bảng</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Email người dùng</label>
+                    <input type="email" id="shareEmail" class="form-control" placeholder="example@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Quyền</label>
+                    <select id="shareRole" class="form-control">
+                        <option value="viewer">Chỉ xem</option>
+                        <option value="editor">Có thể sửa</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" id="btnShare">Mời</button>
+                
+                <hr>
+                <h6>Thành viên hiện tại</h6>
+                <div id="memberList"></div>
             </div>
         </div>
     </div>
@@ -206,33 +292,39 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
     <script>
-        $("body").css("background-color", "@Model.MauNen");
+        var canEdit = @Html.Raw(Json.Encode(canEdit));
+        var maBang = @Html.Raw(Json.Encode(Model.MaBang));
+        
+        $("body").css("background-color", @Html.Raw(Json.Encode(Model.MauNen)));
 
         $(document).ready(function () {
 
-            // 1. KÉO THẢ THẺ (Cards)
-            $(".card-list").sortable({
-                connectWith: ".card-list",
-                placeholder: "ui-state-highlight",
-                items: ".kanban-card",
-                stop: function (event, ui) {
-                    var item = ui.item;
-                    var cardId = item.attr("data-id");
-                    var newColumn = item.closest(".card-list");
-                    var newColumnId = newColumn.attr("id").replace("col-", "");
-                    var sortedIds = newColumn.sortable("toArray", { attribute: "data-id" });
+            // 1. KÉO THẢ THẺ (Cards) - Chỉ cho phép nếu có quyền sửa
+            if (canEdit) {
+                $(".card-list").sortable({
+                    connectWith: ".card-list",
+                    placeholder: "ui-state-highlight",
+                    items: ".kanban-card",
+                    stop: function (event, ui) {
+                        var item = ui.item;
+                        var cardId = item.attr("data-id");
+                        var newColumn = item.closest(".card-list");
+                        var newColumnId = newColumn.attr("id").replace("col-", "");
+                        var sortedIds = newColumn.sortable("toArray", { attribute: "data-id" });
 
-                    $.ajax({
-                        url: '/Board/MoveCard',
-                        type: 'POST',
-                        traditional: true,
-                        data: { maThe: cardId, maCotMoi: newColumnId, cardIds: sortedIds }
-                    });
-                }
-            }).disableSelection();
+                        $.ajax({
+                            url: '/Board/MoveCard',
+                            type: 'POST',
+                            traditional: true,
+                            data: { maThe: cardId, maCotMoi: newColumnId, cardIds: sortedIds }
+                        });
+                    }
+                }).disableSelection();
+            }
 
             // 2. THÊM THẺ MỚI
             $(".add-card-btn").click(function () {
+                if (!canEdit) return;
                 var columnId = $(this).data("column-id");
                 var title = prompt("Nhập nội dung công việc:");
                 if (title) {
@@ -250,6 +342,7 @@
 
             // Gửi trạng thái khi check
             $(document).on("change", ".card-checkbox", function() {
+                if (!canEdit) return;
                 var cardId = $(this).data("id");
                 var isChecked = $(this).is(":checked");
                 var cardTitle = $(this).closest(".kanban-card").find(".card-title");
@@ -282,6 +375,7 @@
 
             // 5. Nút Lưu
             $("#btnSaveCard").click(function () {
+                if (!canEdit) return;
                 var id = $("#modalCardId").val();
                 var title = $("#modalCardTitle").val();
                 var desc = $("#modalCardDesc").val();
@@ -294,6 +388,7 @@
 
             // 6. Nút Xóa
             $("#btnDeleteCard").click(function () {
+                if (!canEdit) return;
                 if (confirm("Xóa thẻ này?")) {
                     var id = $("#modalCardId").val();
                     $.post("/Board/DeleteCard", { id: id }, function (res) {
@@ -307,30 +402,131 @@
 
             // 7. THÊM CỘT MỚI
             $("#btnAddColumn").click(function () {
+                if (!canEdit) return;
                 var name = prompt("Nhập tên danh sách mới:");
                 if (name) {
-                    $.post("/Board/CreateColumn", { maBang: @Model.MaBang, tenCot: name }, function (res) {
+                    $.post("/Board/CreateColumn", { maBang: maBang, tenCot: name }, function (res) {
                         if (res.success) location.reload();
                     });
                 }
             });
 
-            // 8. KÉO THẢ CỘT
-            $(".board-container").sortable({
-                items: ".board-column:not(#btnAddColumn)",
-                placeholder: "column-placeholder",
-                tolerance: "pointer",
-                axis: "x",
-                start: function(e, ui){ ui.placeholder.height(ui.item.outerHeight()); },
-                stop: function (event, ui) {
-                    var sortedIds = $(this).sortable("toArray", { attribute: "data-column-id" });
-                    $.ajax({
-                        url: '/Board/UpdateColumnPosition',
-                        type: 'POST',
-                        traditional: true,
-                        data: { columnIds: sortedIds }
+            // 8. KÉO THẢ CỘT - Chỉ cho phép nếu có quyền sửa
+            if (canEdit) {
+                $(".board-container").sortable({
+                    items: ".board-column:not(#btnAddColumn)",
+                    placeholder: "column-placeholder",
+                    tolerance: "pointer",
+                    axis: "x",
+                    start: function(e, ui){ ui.placeholder.height(ui.item.outerHeight()); },
+                    stop: function (event, ui) {
+                        var sortedIds = $(this).sortable("toArray", { attribute: "data-column-id" });
+                        $.ajax({
+                            url: '/Board/UpdateColumnPosition',
+                            type: 'POST',
+                            traditional: true,
+                            data: { columnIds: sortedIds }
+                        });
+                    }
+                });
+            }
+
+            // === CHỨC NĂNG CHIA SẺ ===
+
+            // Mời thành viên
+            $('#btnShare').click(function() {
+                var email = $('#shareEmail').val();
+                var vaiTro = $('#shareRole').val();
+                
+                if (!email) {
+                    alert('Vui lòng nhập email');
+                    return;
+                }
+                
+                $.post('/Board/ShareBoard', {
+                    maBang: maBang,
+                    email: email,
+                    vaiTro: vaiTro
+                }, function(result) {
+                    if (result.success) {
+                        alert('Đã mời thành công!');
+                        loadMembers();
+                        $('#shareEmail').val('');
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            });
+
+            // Load danh sách thành viên
+            function loadMembers() {
+                $.get('/Board/GetBoardMembers', { maBang: maBang }, function(members) {
+                    var html = '';
+                    members.forEach(function(m) {
+                        var roleText = m.vaiTro == 'owner' ? 'Chủ sở hữu' : 
+                                      (m.vaiTro == 'editor' ? 'Có thể sửa' : 'Chỉ xem');
+                        var badgeClass = m.vaiTro == 'owner' ? 'badge-primary' : 
+                                        (m.vaiTro == 'editor' ? 'badge-success' : 'badge-secondary');
+                        
+                        html += '<div class="member-item">';
+                        html += '<div class="member-info">';
+                        html += '<strong>' + m.hoTen + '</strong><br>';
+                        html += '<small class="text-muted">' + m.email + '</small>';
+                        html += '</div>';
+                        html += '<div class="member-actions">';
+                        
+                        if (m.vaiTro != 'owner') {
+                            html += '<select class="form-control form-control-sm role-select" data-id="' + m.maTaiKhoan + '" style="width: auto;">';
+                            html += '<option value="viewer"' + (m.vaiTro == 'viewer' ? ' selected' : '') + '>Chỉ xem</option>';
+                            html += '<option value="editor"' + (m.vaiTro == 'editor' ? ' selected' : '') + '>Có thể sửa</option>';
+                            html += '</select>';
+                            html += '<button class="btn btn-sm btn-danger btn-remove-member" data-id="' + m.maTaiKhoan + '"><i class="fa fa-times"></i></button>';
+                        } else {
+                            html += '<span class="badge ' + badgeClass + '">' + roleText + '</span>';
+                        }
+                        
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                    $('#memberList').html(html);
+                });
+            }
+
+            // Xóa thành viên
+            $(document).on('click', '.btn-remove-member', function() {
+                var maTaiKhoan = $(this).data('id');
+                if (confirm('Bạn có chắc muốn xóa thành viên này?')) {
+                    $.post('/Board/RemoveMember', {
+                        maBang: maBang,
+                        maTaiKhoan: maTaiKhoan
+                    }, function(result) {
+                        if (result.success) {
+                            loadMembers();
+                        }
                     });
                 }
+            });
+
+            // Cập nhật vai trò
+            $(document).on('change', '.role-select', function() {
+                var maTaiKhoan = $(this).data('id');
+                var vaiTroMoi = $(this).val();
+                
+                $.post('/Board/UpdateMemberRole', {
+                    maBang: maBang,
+                    maTaiKhoan: maTaiKhoan,
+                    vaiTroMoi: vaiTroMoi
+                }, function(result) {
+                    if (!result.success) {
+                        alert('Không thể cập nhật vai trò');
+                        loadMembers();
+                    }
+                });
+            });
+
+            // Load members khi mở modal
+            $('#shareModal').on('show.bs.modal', function() {
+                loadMembers();
             });
 
         });
