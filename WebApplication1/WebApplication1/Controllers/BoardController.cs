@@ -17,11 +17,16 @@ namespace WebApplication1.Controllers
         {
             string emailDangNhap = User.Identity.Name;
             var user = db.TaiKhoans.FirstOrDefault(u => u.DiaChiEmail == emailDangNhap);
-            return user?.MaTaiKhoan ?? 0;
+            // Nếu không tìm thấy user, trả về -1 để tránh permission bypass
+            return user?.MaTaiKhoan ?? -1;
         }
 
         private string GetUserRole(int maBang, int maTaiKhoan)
         {
+            // Nếu userId không hợp lệ, trả về "none"
+            if (maTaiKhoan < 0)
+                return "none";
+                
             var bang = db.Bangs.Find(maBang);
             
             // Chủ sở hữu
@@ -84,19 +89,20 @@ namespace WebApplication1.Controllers
             
             if (!CanManage(maBang, userId))
             {
-                return Json(new { success = false, message = "Chỉ chủ sở hữu mới có quyền mời" });
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
             
             var taiKhoan = db.TaiKhoans.FirstOrDefault(t => t.DiaChiEmail == email);
             if (taiKhoan == null)
             {
-                return Json(new { success = false, message = "Không tìm thấy email này" });
+                // Trả về thông báo chung để tránh user enumeration
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
 
             // Không cho mời chính mình
             if (taiKhoan.MaTaiKhoan == userId)
             {
-                return Json(new { success = false, message = "Bạn không thể mời chính mình" });
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
             
             var existing = db.ThanhVienBangs
@@ -104,7 +110,7 @@ namespace WebApplication1.Controllers
             
             if (existing != null)
             {
-                return Json(new { success = false, message = "Người này đã là thành viên" });
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
             
             var thanhVien = new ThanhVienBang
@@ -166,7 +172,7 @@ namespace WebApplication1.Controllers
             
             if (!CanManage(maBang, userId))
             {
-                return Json(new { success = false, message = "Chỉ chủ sở hữu mới có quyền xóa thành viên" });
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
             
             var thanhVien = db.ThanhVienBangs
@@ -189,7 +195,7 @@ namespace WebApplication1.Controllers
             
             if (!CanManage(maBang, userId))
             {
-                return Json(new { success = false, message = "Chỉ chủ sở hữu mới có quyền thay đổi vai trò" });
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
             
             var thanhVien = db.ThanhVienBangs
@@ -216,13 +222,13 @@ namespace WebApplication1.Controllers
                 var cot = db.Cots.Find(maCot);
                 if (cot == null)
                 {
-                    return Json(new { success = false, message = "Không tìm thấy cột" });
+                    return Json(new { success = false, message = "Không thể thực hiện thao tác này" });
                 }
 
                 int userId = GetCurrentUserId();
                 if (!CanEdit(cot.MaBang, userId))
                 {
-                    return Json(new { success = false, message = "Bạn không có quyền thêm thẻ" });
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                 }
 
                 // Tạo thẻ mới
@@ -263,7 +269,7 @@ namespace WebApplication1.Controllers
                         int userId = GetCurrentUserId();
                         if (!CanEdit(the.Cot.MaBang, userId))
                         {
-                            return Json(new { success = false, message = "Bạn không có quyền sửa" });
+                            return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                         }
 
                         // Cập nhật lại thứ tự
@@ -291,13 +297,13 @@ namespace WebApplication1.Controllers
                 var cotMoi = db.Cots.Find(maCotMoi);
                 if (cotMoi == null)
                 {
-                    return Json(new { success = false, message = "Không tìm thấy cột" });
+                    return Json(new { success = false, message = "Không thể thực hiện thao tác này" });
                 }
 
                 int userId = GetCurrentUserId();
                 if (!CanEdit(cotMoi.MaBang, userId))
                 {
-                    return Json(new { success = false, message = "Bạn không có quyền sửa" });
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                 }
 
                 // 1. Cập nhật cột mới cho thẻ
@@ -327,9 +333,9 @@ namespace WebApplication1.Controllers
                 db.SaveChanges();
                 return Json(new { success = true });
             }
-            catch (Exception ex)
+            catch
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false });
             }
         }
 
@@ -371,7 +377,7 @@ namespace WebApplication1.Controllers
                     int userId = GetCurrentUserId();
                     if (!CanEdit(the.Cot.MaBang, userId))
                     {
-                        return Json(new { success = false, message = "Bạn không có quyền sửa" });
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                     }
 
                     the.TieuDe = title;
@@ -403,7 +409,7 @@ namespace WebApplication1.Controllers
                     int userId = GetCurrentUserId();
                     if (!CanEdit(the.Cot.MaBang, userId))
                     {
-                        return Json(new { success = false, message = "Bạn không có quyền xóa" });
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                     }
 
                     db.Thes.Remove(the);
@@ -425,7 +431,7 @@ namespace WebApplication1.Controllers
                 int userId = GetCurrentUserId();
                 if (!CanEdit(maBang, userId))
                 {
-                    return Json(new { success = false, message = "Bạn không có quyền thêm cột" });
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                 }
 
                 var cotMoi = new Cot();
@@ -465,7 +471,7 @@ namespace WebApplication1.Controllers
                         int userId = GetCurrentUserId();
                         if (!CanEdit(cot.MaBang, userId))
                         {
-                            return Json(new { success = false, message = "Bạn không có quyền sửa" });
+                            return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                         }
 
                         cot.ThuTu = thuTu;
@@ -494,7 +500,7 @@ namespace WebApplication1.Controllers
                     int userId = GetCurrentUserId();
                     if (!CanEdit(the.Cot.MaBang, userId))
                     {
-                        return Json(new { success = false, message = "Bạn không có quyền sửa" });
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
                     }
 
                     the.DaHoanThanh = status; // Lưu trạng thái (true/false)

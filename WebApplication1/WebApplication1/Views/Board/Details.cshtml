@@ -292,10 +292,10 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
     <script>
-        var canEdit = @(canEdit ? "true" : "false");
-        var maBang = @Model.MaBang;
+        var canEdit = @Html.Raw(Json.Encode(canEdit));
+        var maBang = @Html.Raw(Json.Encode(Model.MaBang));
         
-        $("body").css("background-color", "@Model.MauNen");
+        $("body").css("background-color", "@Html.Raw(Html.AttributeEncode(Model.MauNen))");
 
         $(document).ready(function () {
 
