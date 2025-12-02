@@ -19,6 +19,7 @@ namespace WebApplication1.Models
         {
             this.Cots = new HashSet<Cot>();
             this.NhanCuaBangs = new HashSet<NhanCuaBang>();
+            this.ThanhVienBangs = new HashSet<ThanhVienBang>();
         }
     
         public int MaBang { get; set; }
@@ -32,5 +33,7 @@ namespace WebApplication1.Models
         public virtual ICollection<Cot> Cots { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<NhanCuaBang> NhanCuaBangs { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<ThanhVienBang> ThanhVienBangs { get; set; }
     }
 }

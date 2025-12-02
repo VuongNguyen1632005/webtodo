@@ -18,6 +18,7 @@ namespace WebApplication1.Models
         public TaiKhoan()
         {
             this.Bangs = new HashSet<Bang>();
+            this.ThanhVienBangs = new HashSet<ThanhVienBang>();
         }
     
         public int MaTaiKhoan { get; set; }
@@ -28,5 +29,7 @@ namespace WebApplication1.Models
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Bang> Bangs { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<ThanhVienBang> ThanhVienBangs { get; set; }
     }
 }
