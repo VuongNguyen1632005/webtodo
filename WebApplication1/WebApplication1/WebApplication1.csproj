@@ -159,6 +159,9 @@
     <Compile Include="Models\TaiKhoan.cs">
       <DependentUpon>TrelloModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\ThanhVienBang.cs">
+      <DependentUpon>TrelloModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="Models\The.cs">
       <DependentUpon>TrelloModel.tt</DependentUpon>
     </Compile>
