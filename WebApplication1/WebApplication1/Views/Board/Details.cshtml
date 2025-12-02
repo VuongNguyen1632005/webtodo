@@ -295,7 +295,7 @@
         var canEdit = @Html.Raw(Json.Encode(canEdit));
         var maBang = @Html.Raw(Json.Encode(Model.MaBang));
         
-        $("body").css("background-color", "@Html.Raw(Html.AttributeEncode(Model.MauNen))");
+        $("body").css("background-color", @Html.Raw(Json.Encode(Model.MauNen)));
 
         $(document).ready(function () {
 
