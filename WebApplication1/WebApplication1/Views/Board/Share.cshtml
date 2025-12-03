@@ -1,0 +1,224 @@
+﻿@model WebApplication1.Models.Bang
+
+@{
+    ViewBag.Title = "Quản lý thành viên - " + Model.TenBang;
+    var themeColor = Model.MauNen ?? "#026AA7";
+}
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="@Url.Action("Details", "Board", new { id = Model.MaBang })" class="btn btn-outline-secondary border-0 mb-2">
+                <i class="fa fa-arrow-left"></i> Quay lại bảng
+            </a>
+            <h2 class="font-weight-bold" style="color: @themeColor">
+                <i class="fa fa-users mr-2"></i>Chia sẻ & Phân quyền
+            </h2>
+            <p class="text-muted">Quản lý thành viên cho bảng: <strong>@Model.TenBang</strong></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body bg-light rounded">
+                    <h5 class="font-weight-bold mb-3">Mời thành viên mới</h5>
+                    <div class="form-group">
+                        <label>Địa chỉ Email</label>
+                        <input type="email" id="shareEmail" class="form-control" placeholder="vidu@email.com" style="height: 50px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select id="shareRole" class="form-control" style="height: 50px;">
+                            <option value="viewer">Chỉ xem (Viewer)</option>
+                            <option value="editor">Được chỉnh sửa (Editor)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-block text-white font-weight-bold py-3 mt-4" id="btnShare"
+                            style="background-color: @themeColor; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <i class="fa fa-paper-plane mr-1"></i> Gửi lời mời
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4">
+                    <h5 class="font-weight-bold">Danh sách thành viên hiện tại</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="memberList" class="list-group list-group-flush">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa fa-spinner fa-spin fa-2x"></i><br />Đang tải dữ liệu...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .member-item {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        transition: background 0.2s;
+    }
+
+        .member-item:hover {
+            background-color: #f9f9f9;
+        }
+
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        margin-right: 15px;
+        text-transform: uppercase;
+    }
+
+    .user-info {
+        flex-grow: 1;
+    }
+
+    .user-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .user-email {
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .role-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .role-owner {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .role-editor {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .role-viewer {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        var maBang = @Model.MaBang;
+
+        $(document).ready(function() {
+            loadMembers(); // Tải danh sách ngay khi vào trang
+
+            // Mời thành viên
+            $('#btnShare').click(function() {
+                var email = $('#shareEmail').val();
+                var vaiTro = $('#shareRole').val();
+                var btn = $(this);
+
+                if(!email) { alert('Vui lòng nhập email!'); return; }
+
+                btn.prop('disabled', true).text('Đang gửi...');
+
+                $.post('/Board/ShareBoard', { maBang: maBang, email: email, vaiTro: vaiTro }, function(res) {
+                    btn.prop('disabled', false).html('<i class="fa fa-paper-plane mr-1"></i> Gửi lời mời');
+
+                    if (res.success) {
+                        alert('Đã thêm thành viên thành công!');
+                        $('#shareEmail').val('');
+                        loadMembers();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            });
+
+            // Load danh sách (Giao diện mới)
+            function loadMembers() {
+                $.get('/Board/GetBoardMembers', { maBang: maBang }, function(members) {
+                    var html = '';
+                    var colors = ['#0079bf', '#eb5a46', '#61bd4f', '#f2d600', '#c377e0'];
+
+                    members.forEach(function(m) {
+                        var initial = m.hoTen ? m.hoTen.charAt(0) : m.email.charAt(0);
+                        var bg = colors[m.hoTen.length % colors.length];
+
+                        // Xác định badge vai trò
+                        var badgeClass = 'role-viewer';
+                        var badgeText = 'Viewer';
+                        if(m.vaiTro === 'owner') { badgeClass = 'role-owner'; badgeText = 'Chủ sở hữu'; }
+                        else if(m.vaiTro === 'editor') { badgeClass = 'role-editor'; badgeText = 'Editor'; }
+
+                        html += '<div class="member-item border-bottom">';
+                        // Avatar
+                        html += '<div class="avatar-circle" style="background:'+bg+'">' + initial + '</div>';
+
+                        // Thông tin
+                        html += '<div class="user-info">';
+                        html += '<div class="user-name">' + (m.hoTen || 'Chưa đặt tên') + ' <span class="role-badge '+badgeClass+' ml-2">' + badgeText + '</span></div>';
+                        html += '<div class="user-email">' + m.email + '</div>';
+                        html += '</div>';
+
+                        // Hành động (Nếu không phải Owner thì mới sửa/xóa đc)
+                        if (m.vaiTro !== 'owner') {
+                            html += '<div class="d-flex align-items-center">';
+
+                            // Select đổi quyền
+                            html += '<select class="form-control mr-2 role-change" data-id="'+m.maTaiKhoan+'" style="width: 120px;">';
+                            html += '<option value="viewer" '+(m.vaiTro==='viewer'?'selected':'')+'>Viewer</option>';
+                            html += '<option value="editor" '+(m.vaiTro==='editor'?'selected':'')+'>Editor</option>';
+                            html += '</select>';
+
+                            // Nút xóa
+                            html += '<button class="btn btn-outline-danger btn-sm btn-remove" data-id="'+m.maTaiKhoan+'" title="Xóa thành viên"><i class="fa fa-trash"></i></button>';
+                            html += '</div>';
+                        }
+
+                        html += '</div>';
+                    });
+                    $('#memberList').html(html);
+                });
+            }
+
+            // Xử lý đổi quyền
+            $(document).on('change', '.role-change', function() {
+                var uid = $(this).data('id');
+                var role = $(this).val();
+                $.post('/Board/UpdateMemberRole', { maBang: maBang, maTaiKhoan: uid, vaiTroMoi: role }, function(res) {
+                    if(!res.success) { alert('Lỗi cập nhật!'); loadMembers(); }
+                });
+            });
+
+            // Xử lý xóa
+            $(document).on('click', '.btn-remove', function() {
+                if(confirm('Chắc chắn muốn mời người này ra khỏi bảng?')) {
+                    var uid = $(this).data('id');
+                    $.post('/Board/RemoveMember', { maBang: maBang, maTaiKhoan: uid }, function(res) {
+                        if(res.success) loadMembers();
+                    });
+                }
+            });
+        });
+    </script>
+}

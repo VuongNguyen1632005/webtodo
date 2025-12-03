@@ -3,37 +3,341 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
-    @Styles.Render("~/Content/css")
-    @Scripts.Render("~/bundles/modernizr")
+    <title>@ViewBag.Title - Trello Clone</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F9FAFC;
+        }
+
+        /* Navbar màu xanh Trello */
+        .navbar-custom {
+            background-color: #026AA7;
+            padding: 8px 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+            .navbar-custom .navbar-brand {
+                color: rgba(255,255,255,0.9) !important;
+                font-weight: bold;
+                font-size: 1.2rem;
+                letter-spacing: 0.5px;
+            }
+
+            .navbar-custom .nav-link {
+                color: rgba(255,255,255,0.8) !important;
+                font-weight: 500;
+                transition: 0.2s;
+            }
+
+                .navbar-custom .nav-link:hover {
+                    background-color: rgba(255,255,255,0.2);
+                    border-radius: 4px;
+                    color: white !important;
+                }
+
+        .btn-create-board-nav {
+            background-color: rgba(255,255,255,0.25);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+            .btn-create-board-nav:hover {
+                background-color: rgba(255,255,255,0.4);
+                color: white;
+                text-decoration: none;
+            }
+
+        /* --- CSS CHO MODAL TẠO BẢNG --- */
+        #createBoardModal .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        #createBoardModal .modal-header {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 20px 24px;
+        }
+
+        #createBoardModal .modal-body {
+            padding: 24px;
+        }
+
+        /* Ô nhập tiêu đề */
+        .input-board-title {
+            font-size: 1.1rem;
+            padding: 20px;
+            border: 2px solid #dfe1e6;
+            border-radius: 8px;
+            background-color: #fafbfc;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+            .input-board-title:focus {
+                background-color: #fff;
+                border-color: #0079bf;
+                box-shadow: 0 0 0 3px rgba(0, 121, 191, 0.15);
+            }
+
+        /* Lưới màu sắc */
+        .color-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .color-option-modern {
+            width: 100%;
+            padding-bottom: 100%; /* Tạo hình vuông/tròn tỉ lệ 1:1 */
+            border-radius: 50%; /* Bo tròn hoàn toàn */
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+            .color-option-modern:hover {
+                transform: scale(1.1);
+            }
+
+            /* Hiệu ứng khi chọn: Viền ngoài và dấu tích */
+            .color-option-modern.selected {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 3px #fff, 0 0 0 5px #0079bf;
+            }
+
+                /* Dấu tích bên trong */
+                .color-option-modern.selected::after {
+                    content: '\f00c'; /* FontAwesome check icon */
+                    font-family: 'Font Awesome 5 Free';
+                    font-weight: 900;
+                    color: white;
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 14px;
+                }
+
+        /* Nút tạo bảng */
+        #btnGlobalCreateBoard {
+            padding: 10px 24px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu mượt */
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
-        <div class="container">
-            @Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                </ul>
-            </div>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+            <i class="fa-brands fa-trello"></i> Trello Clone
+        </a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="@Url.Action("Index", "Home")">Các Bảng</a>
+                </li>
+
+                @{
+                    string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+                    string currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+                }
+
+                @if (currentController == "Board" && currentAction == "Details")
+                {
+                    <li class="nav-item ml-2">
+                        <button class="btn btn-sm btn-create-board-nav py-1 px-2 mt-1" data-toggle="modal" data-target="#createBoardModal">
+                            <i class="fa fa-plus"></i> Tạo mới
+                        </button>
+                    </li>
+                }
+            </ul>
+
+            <ul class="navbar-nav ml-auto align-items-center">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <li class="nav-item mr-3">
+                        <span class="text-white small">
+                            Xin chào,
+                            <strong>@(Session["HoTen"] != null ? Session["HoTen"] : User.Identity.Name)</strong>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-light text-danger font-weight-bold" href="@Url.Action("Logout", "Account")">
+                            <i class="fa fa-sign-out-alt"></i> Đăng xuất
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Login", "Account")">Đăng nhập</a>
+                    </li>
+                }
+            </ul>
         </div>
     </nav>
-    <div class="container body-content">
+
+    <div>
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
-        </footer>
     </div>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
     @RenderSection("scripts", required: false)
-</body>
+
+    <div class="modal fade" id="createBoardModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold text-dark">Tạo bảng mới</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-4">
+                        <label class="text-muted font-weight-bold text-uppercase small" style="letter-spacing: 1px;">Tiêu đề bảng</label>
+                        <input type="text" id="globalBoardTitle" class="form-control input-board-title" placeholder="Nhập tên dự án của bạn..." required autocomplete="off">
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="text-muted font-weight-bold text-uppercase small" style="letter-spacing: 1px;">Chọn phông nền</label>
+                        <div class="color-grid-modern">
+                            <div class="color-option-modern selected" style="background: #0079bf;" data-color="#0079bf" title="Xanh dương"></div>
+                            <div class="color-option-modern" style="background: #d29034;" data-color="#d29034" title="Cam"></div>
+                            <div class="color-option-modern" style="background: #519839;" data-color="#519839" title="Xanh lá"></div>
+                            <div class="color-option-modern" style="background: #b04632;" data-color="#b04632" title="Đỏ"></div>
+                            <div class="color-option-modern" style="background: #89609e;" data-color="#89609e" title="Tím"></div>
+                            <div class="color-option-modern" style="background: #cd5a91;" data-color="#cd5a91" title="Hồng"></div>
+                            <div class="color-option-modern" style="background: #00aecc;" data-color="#00aecc" title="Xanh ngọc"></div>
+                            <div class="color-option-modern" style="background: #838c91;" data-color="#838c91" title="Xám"></div>
+                            <div class="color-option-modern" style="background: #172b4d;" data-color="#172b4d" title="Đêm"></div>
+
+                            <div class="color-option-modern d-flex justify-content-center align-items-center bg-light border" title="Màu tùy chọn" style="overflow: hidden;">
+                                <input type="color" id="modernColorPicker" style="width: 150%; height: 150%; cursor: pointer; border: none; padding: 0; margin: -25%;">
+                            </div>
+                        </div>
+                        <input type="hidden" id="globalSelectedColor" value="#0079bf">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light" style="border-top: none; padding: 16px 24px;">
+                    <button type="button" class="btn btn-link text-muted" data-dismiss="modal" style="text-decoration: none;">Hủy bỏ</button>
+                    <button type="button" class="btn btn-primary shadow-sm" id="btnGlobalCreateBoard" style="background-color: #0079bf;">
+                        Tạo bảng mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+
+            // Hàm cập nhật giao diện theo màu
+            function updateUIColor(color) {
+                $('#globalSelectedColor').val(color);
+                $('#btnGlobalCreateBoard').css('background-color', color);
+                // Đổi viền input khi focus
+                $('.input-board-title').css('border-color', 'rgba(0,0,0,0.1)');
+            }
+
+            //Click vào ô màu tròn
+            $('.color-option-modern[data-color]').click(function () {
+                var color = $(this).data('color');
+
+                $('.color-option-modern').removeClass('selected');
+                $('.color-option-modern').css('box-shadow', 'none');
+                $(this).addClass('selected');
+
+                $(this).css('box-shadow', '0 0 0 3px #fff, 0 0 0 5px ' + color);
+
+                updateUIColor(color);
+            });
+
+            //Click vào Color Picker
+            $('#modernColorPicker').change(function () {
+                var color = $(this).val();
+                $('.color-option-modern').removeClass('selected').css('box-shadow', 'none');
+                $(this).parent().addClass('selected');
+                $(this).parent().css('box-shadow', '0 0 0 3px #fff, 0 0 0 5px ' + color);
+                updateUIColor(color);
+            });
+
+            //Reset Modal khi mở
+            $('#createBoardModal').on('show.bs.modal', function () {
+                $('#globalBoardTitle').val('');
+                // Mặc định chọn màu đầu tiên
+                $('.color-option-modern[data-color="#0079bf"]').click();
+            });
+
+            //Focus Input
+            $('.input-board-title').focus(function () {
+                var currentColor = $('#globalSelectedColor').val();
+                $(this).css('border-color', currentColor);
+            });
+
+            $('#btnGlobalCreateBoard').click(function () {
+                var title = $('#globalBoardTitle').val();
+                var color = $('#globalSelectedColor').val();
+                var btn = $(this);
+
+                if (!title) {
+                    $('#globalBoardTitle').css('border-color', 'red').focus();
+                    return;
+                }
+
+                //Lưu chữ cũ ("Tạo bảng mới")
+                var originalText = "Tạo bảng mới";
+
+                //Bật chế độ Loading
+                btn.html('<i class="fa fa-spinner fa-spin"></i> Đang tạo...').prop('disabled', true);
+
+                //Gửi Ajax
+                $.ajax({
+                    url: '/Board/Create',
+                    type: 'POST',
+                    data: { tenBang: title, mauNen: color },
+                    success: function (res) {
+                        if (res.success) {
+                            window.location.href = '/Board/Details/' + res.id;
+                        } else {
+                            alert('Lỗi từ Server: ' + res.message);
+                            // Reset nút nếu server báo lỗi logic
+                            btn.html(originalText).prop('disabled', false);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // BẮT LỖI NẾU SERVER SẬP HOẶC CODE C# SAI
+                        console.error(xhr.responseText); // In lỗi ra Console (F12)
+                        alert('Lỗi hệ thống! Vui lòng nhấn F12 chọn tab Console để xem chi tiết.');
+
+                        // Reset nút để bấm lại được
+                        btn.html(originalText).prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script></body>
 </html>
