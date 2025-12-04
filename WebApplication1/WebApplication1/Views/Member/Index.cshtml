@@ -108,7 +108,7 @@
                 <div class="card-body bg-light rounded">
                     <h5 class="font-weight-bold mb-3">Mời thành viên mới</h5>
 
-                    @using (Html.BeginForm("AddMember", "Board", FormMethod.Post))
+                    @using (Html.BeginForm("Add", "Member", FormMethod.Post))
                     {
                         <input type="hidden" name="maBang" value="@Model.MaBang" />
 
@@ -141,7 +141,9 @@
                     <div class="list-group list-group-flush">
 
                         <div class="member-item border-bottom bg-light-yellow">
-                            <div class="avatar-circle" style="background: #f2d600">@Model.TaiKhoan.HoTen.Substring(0, 1).ToUpper()</div>
+                            <div class="avatar-circle" style="background: #f2d600">
+                                @(Model.TaiKhoan.HoTen.Substring(0, 1).ToUpper())
+                            </div>
                             <div class="user-info">
                                 <div class="user-name">
                                     @Model.TaiKhoan.HoTen
@@ -169,10 +171,11 @@
 
                                 <div class="d-flex align-items-center">
 
-                                    @using (Html.BeginForm("UpdateRole", "Board", FormMethod.Post, new { @class = "mr-2" }))
+                                    @using (Html.BeginForm("UpdateRole", "Member", FormMethod.Post, new { @class = "mr-2" }))
                                     {
                                         <input type="hidden" name="maBang" value="@Model.MaBang" />
                                         <input type="hidden" name="maTaiKhoan" value="@tv.MaTaiKhoan" />
+
                                         <div class="input-group input-group-sm">
                                             <select name="vaiTro" class="form-control" style="width: 100px;">
                                                 <option value="viewer" @(tv.VaiTro == "viewer" ? "selected" : "")>Viewer</option>
@@ -184,11 +187,13 @@
                                         </div>
                                     }
 
-                                    @using (Html.BeginForm("RemoveMember", "Board", FormMethod.Post))
+                                    @using (Html.BeginForm("Remove", "Member", FormMethod.Post))
                                     {
                                         <input type="hidden" name="maBang" value="@Model.MaBang" />
                                         <input type="hidden" name="maTaiKhoan" value="@tv.MaTaiKhoan" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Mời người này ra khỏi bảng?');" title="Xóa">
+
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Bạn có chắc chắn muốn mời người này ra khỏi bảng?');" title="Xóa thành viên">
                                             <i class="fa fa-trash"></i>
                                         </button>
                                     }
@@ -209,4 +214,3 @@
         </div>
     </div>
 </div>
-

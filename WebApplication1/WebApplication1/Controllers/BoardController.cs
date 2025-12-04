@@ -2,246 +2,517 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
-using WebApplication1.Models;
+using WebApplication1.Models; // Đổi tên namespace nếu cần
 
 namespace WebApplication1.Controllers
 {
-    [Authorize]
+    [Authorize] // Bắt buộc đăng nhập
     public class BoardController : Controller
     {
         private QL_DUANCANHAN_LITEEntities db = new QL_DUANCANHAN_LITEEntities();
 
-        // XEM CHI TIẾT BẢNG ---
+        #region Hàm helper kiểm tra quyền
+
+        private int GetCurrentUserId()
+        {
+            string emailDangNhap = User.Identity.Name;
+            var user = db.TaiKhoans.FirstOrDefault(u => u.DiaChiEmail == emailDangNhap);
+            // Nếu không tìm thấy user, trả về -1 để tránh permission bypass
+            return user?.MaTaiKhoan ?? -1;
+        }
+
+        private string GetUserRole(int maBang, int maTaiKhoan)
+        {
+            // Nếu userId không hợp lệ, trả về "none"
+            if (maTaiKhoan < 0)
+                return "none";
+
+            var bang = db.Bangs.Find(maBang);
+
+            // Chủ sở hữu
+            if (bang?.MaNguoiSoHuu == maTaiKhoan)
+                return "owner";
+
+            // Thành viên được chia sẻ
+            var thanhVien = db.ThanhVienBangs
+                .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
+
+            return thanhVien?.VaiTro ?? "none";
+        }
+
+        private bool CanView(int maBang, int maTaiKhoan)
+        {
+            var role = GetUserRole(maBang, maTaiKhoan);
+            return role != "none";
+        }
+
+        private bool CanEdit(int maBang, int maTaiKhoan)
+        {
+            var role = GetUserRole(maBang, maTaiKhoan);
+            return role == "owner" || role == "editor";
+        }
+
+        private bool CanManage(int maBang, int maTaiKhoan)
+        {
+            return GetUserRole(maBang, maTaiKhoan) == "owner";
+        }
+
+        #endregion
+
         public ActionResult Details(int id)
         {
-            string email = User.Identity.Name;
-            var user = db.TaiKhoans.Where(u => u.DiaChiEmail == email).FirstOrDefault();
-            var board = db.Bangs.Where(b => b.MaBang == id).FirstOrDefault();
+            int userId = GetCurrentUserId();
 
-            // Kiểm tra quyền cơ bản (nếu ko phải chủ, ko phải thành viên -> về Home)
-            var tv = db.ThanhVienBangs.Where(x => x.MaBang == id && x.MaTaiKhoan == user.MaTaiKhoan).FirstOrDefault();
+            // 1. Tìm bảng theo ID
+            var board = db.Bangs.FirstOrDefault(b => b.MaBang == id);
 
-            if (board.MaNguoiSoHuu != user.MaTaiKhoan && tv == null)
+            // 2. Bảo mật: Nếu không tìm thấy hoặc không có quyền xem -> Đá về trang chủ
+            if (board == null || !CanView(id, userId))
             {
                 return RedirectToAction("Index", "Home");
             }
 
-            // Gán quyền để View dùng
-            if (board.MaNguoiSoHuu == user.MaTaiKhoan) ViewBag.UserRole = "owner";
-            else ViewBag.UserRole = tv.VaiTro;
+            // Truyền vai trò xuống View để hiển thị/ẩn nút
+            ViewBag.UserRole = GetUserRole(id, userId);
 
+            // 3. Trả về View kèm dữ liệu Bảng (EF sẽ tự load Cột và Thẻ liên quan)
             return View(board);
         }
 
-        // TẠO BẢNG 
+        #region API Chia sẻ bảng
+
+        // API Chia sẻ bảng
         [HttpPost]
-        public ActionResult Create(string tenBang, string mauNen)
+        public JsonResult ShareBoard(int maBang, string email, string vaiTro)
         {
-            string email = User.Identity.Name;
-            var user = db.TaiKhoans.Where(u => u.DiaChiEmail == email).FirstOrDefault();
+            int userId = GetCurrentUserId();
 
-            Bang b = new Bang();
-            b.TenBang = tenBang;
-            b.MauNen = mauNen;
-            b.MaNguoiSoHuu = user.MaTaiKhoan;
-
-            Cot c1 = new Cot() { TenCot = "Cần làm", ThuTu = 0, KichHoat = true, MaBang = b.MaBang };
-            Cot c2 = new Cot() { TenCot = "Đang làm", ThuTu = 1, KichHoat = true, MaBang = b.MaBang };
-            Cot c3 = new Cot() { TenCot = "Đã xong", ThuTu = 2, KichHoat = true, MaBang = b.MaBang };
-
-            db.Bangs.Add(b);
-            db.SaveChanges();
-
-            c1.MaBang = b.MaBang; c2.MaBang = b.MaBang; c3.MaBang = b.MaBang;
-            db.Cots.Add(c1); db.Cots.Add(c2); db.Cots.Add(c3);
-            db.SaveChanges();
-
-            return RedirectToAction("Details", new { id = b.MaBang });
-        }
-
-        //TẠO CỘT MỚI
-        [HttpPost]
-        public ActionResult CreateColumn(int maBang, string tenCot)
-        {
-            Cot c = new Cot();
-            c.MaBang = maBang;
-            c.TenCot = tenCot;
-            c.KichHoat = true;
-            c.ThuTu = db.Cots.Where(x => x.MaBang == maBang).Count();
-
-            db.Cots.Add(c);
-            db.SaveChanges();
-
-            return RedirectToAction("Details", new { id = maBang });
-        }
-
-        //TẠO THẺ MỚI
-        [HttpPost]
-        public ActionResult CreateCard(int maCot, string noiDung, int maBang)
-        {
-            The t = new The();
-            t.MaCot = maCot;
-            t.TieuDe = noiDung;
-            t.ThuTu = 0;
-            t.HanChot = DateTime.Now.AddDays(1);
-            t.DaHoanThanh = false;
-
-            db.Thes.Add(t);
-            db.SaveChanges();
-
-            return RedirectToAction("Details", new { id = maBang });
-        }
-
-        //XÓA THẺ 
-        [HttpPost] 
-        public ActionResult DeleteCard(int id, int maBang)
-        {
-            var t = db.Thes.Where(x => x.MaThe == id).FirstOrDefault();
-            if (t != null)
+            if (!CanManage(maBang, userId))
             {
-                db.Thes.Remove(t);
-                db.SaveChanges();
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
-            return RedirectToAction("Details", new { id = maBang });
-        }
 
-        //CHECK HOÀN THÀNH 
-        [HttpPost]
-        public ActionResult ToggleComplete(int id, int maBang)
-        {
-            var t = db.Thes.Where(x => x.MaThe == id).FirstOrDefault();
-            if (t != null)
+            var taiKhoan = db.TaiKhoans.FirstOrDefault(t => t.DiaChiEmail == email);
+            if (taiKhoan == null)
             {
-                if (t.DaHoanThanh == true) t.DaHoanThanh = false;
-                else t.DaHoanThanh = true;
-
-                db.SaveChanges();
+                // Trả về thông báo chung để tránh user enumeration
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
-            return RedirectToAction("Details", new { id = maBang });
-        }
 
-        // DI CHUYỂN THẺ ---
-        // Vì không dùng JSON/AJAX, ta làm tính năng "Chuyển sang cột bên cạnh"
-        [HttpPost]
-        public ActionResult MoveCardNext(int maThe, int maCotMoi, int maBang)
-        {
-            var t = db.Thes.Where(x => x.MaThe == maThe).FirstOrDefault();
-            if (t != null)
+            // Không cho mời chính mình
+            if (taiKhoan.MaTaiKhoan == userId)
             {
-                t.MaCot = maCotMoi;
-                db.SaveChanges();
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
-            return RedirectToAction("Details", new { id = maBang });
+
+            var existing = db.ThanhVienBangs
+                .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == taiKhoan.MaTaiKhoan);
+
+            if (existing != null)
+            {
+                return Json(new { success = false, message = "Không thể mời người dùng này" });
+            }
+
+            var thanhVien = new ThanhVienBang
+            {
+                MaBang = maBang,
+                MaTaiKhoan = taiKhoan.MaTaiKhoan,
+                VaiTro = vaiTro,
+                NgayThamGia = DateTime.Now
+            };
+
+            db.ThanhVienBangs.Add(thanhVien);
+            db.SaveChanges();
+
+            return Json(new { success = true });
         }
 
-        // --- 8. XÓA BẢNG ---
-        [HttpPost]
-        public ActionResult DeleteBoard(int maBang)
+        // Lấy danh sách thành viên
+        [HttpGet]
+        public JsonResult GetBoardMembers(int maBang)
         {
-            var b = db.Bangs.Where(x => x.MaBang == maBang).FirstOrDefault();
-            if (b != null)
+            var bang = db.Bangs.Find(maBang);
+            if (bang == null)
             {
-                // Xóa thủ công từng bảng con (nếu SQL chưa set Cascade)
-                var tv = db.ThanhVienBangs.Where(x => x.MaBang == maBang).ToList();
-                db.ThanhVienBangs.RemoveRange(tv);
+                return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+            }
 
-                var cots = db.Cots.Where(x => x.MaBang == maBang).ToList();
-                foreach (var c in cots)
+            var members = new List<object>();
+
+            // Thêm chủ sở hữu
+            members.Add(new
+            {
+                maTaiKhoan = bang.TaiKhoan.MaTaiKhoan,
+                hoTen = bang.TaiKhoan.HoTen,
+                email = bang.TaiKhoan.DiaChiEmail,
+                vaiTro = "owner"
+            });
+
+            // Thêm các thành viên
+            var thanhViens = db.ThanhVienBangs
+                .Where(tv => tv.MaBang == maBang)
+                .Select(tv => new
                 {
-                    var thes = db.Thes.Where(x => x.MaCot == c.MaCot).ToList();
-                    db.Thes.RemoveRange(thes);
+                    maTaiKhoan = tv.MaTaiKhoan,
+                    hoTen = tv.TaiKhoan.HoTen,
+                    email = tv.TaiKhoan.DiaChiEmail,
+                    vaiTro = tv.VaiTro
+                }).ToList();
+
+            members.AddRange(thanhViens);
+
+            return Json(members, JsonRequestBehavior.AllowGet);
+        }
+
+        // Xóa thành viên
+        [HttpPost]
+        public JsonResult RemoveMember(int maBang, int maTaiKhoan)
+        {
+            int userId = GetCurrentUserId();
+
+            if (!CanManage(maBang, userId))
+            {
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+            }
+
+            var thanhVien = db.ThanhVienBangs
+                .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
+
+            if (thanhVien != null)
+            {
+                db.ThanhVienBangs.Remove(thanhVien);
+                db.SaveChanges();
+            }
+
+            return Json(new { success = true });
+        }
+
+        // Cập nhật vai trò thành viên
+        [HttpPost]
+        public JsonResult UpdateMemberRole(int maBang, int maTaiKhoan, string vaiTroMoi)
+        {
+            int userId = GetCurrentUserId();
+
+            if (!CanManage(maBang, userId))
+            {
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+            }
+
+            var thanhVien = db.ThanhVienBangs
+                .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
+
+            if (thanhVien != null)
+            {
+                thanhVien.VaiTro = vaiTroMoi;
+                db.SaveChanges();
+            }
+
+            return Json(new { success = true });
+        }
+
+        #endregion
+
+        // 1. Thêm thẻ nhanh (Gọi bằng AJAX)
+        [HttpPost]
+        public JsonResult CreateCard(int maCot, string noiDung)
+        {
+            try
+            {
+                // Kiểm tra quyền sửa
+                var cot = db.Cots.Find(maCot);
+                if (cot == null)
+                {
+                    return Json(new { success = false, message = "Không thể thực hiện thao tác này" });
                 }
-                db.Cots.RemoveRange(cots);
 
-                db.Bangs.Remove(b);
-                db.SaveChanges();
-            }
-            // Xóa xong về trang chủ
-            return RedirectToAction("Index", "Home");
-        }
-
-        // --- 9. TRANG CHIA SẺ (VIEW RIÊNG) ---
-        public ActionResult Share(int id)
-        {
-            // Kiểm tra quyền chủ sở hữu
-            string email = User.Identity.Name;
-            var user = db.TaiKhoans.Where(u => u.DiaChiEmail == email).FirstOrDefault();
-            var bang = db.Bangs.Where(b => b.MaBang == id).FirstOrDefault();
-
-            if (bang.MaNguoiSoHuu != user.MaTaiKhoan)
-            {
-                return RedirectToAction("Details", new { id = id });
-            }
-
-            return View(bang);
-        }
-
-        // --- 10. XỬ LÝ MỜI THÀNH VIÊN (FORM POST) ---
-        [HttpPost]
-        public ActionResult AddMember(int maBang, string email, string vaiTro)
-        {
-            var userMoi = db.TaiKhoans.Where(u => u.DiaChiEmail == email).FirstOrDefault();
-
-            // Nếu tìm thấy và chưa có trong bảng
-            if (userMoi != null)
-            {
-                var check = db.ThanhVienBangs.Where(x => x.MaBang == maBang && x.MaTaiKhoan == userMoi.MaTaiKhoan).FirstOrDefault();
-                if (check == null)
+                int userId = GetCurrentUserId();
+                if (!CanEdit(cot.MaBang, userId))
                 {
-                    ThanhVienBang tv = new ThanhVienBang();
-                    tv.MaBang = maBang;
-                    tv.MaTaiKhoan = userMoi.MaTaiKhoan;
-                    tv.VaiTro = vaiTro;
-                    tv.NgayThamGia = DateTime.Now;
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
 
-                    db.ThanhVienBangs.Add(tv);
+                // Tạo thẻ mới
+                var theMoi = new The();
+                theMoi.MaCot = maCot;
+                theMoi.TieuDe = noiDung;
+                theMoi.ThuTu = 0; // Mặc định lên đầu
+                theMoi.HanChot = DateTime.Now.AddDays(1);
+
+                db.Thes.Add(theMoi);
+                db.SaveChanges();
+
+                // Trả về ID vừa tạo để JS cập nhật giao diện
+                return Json(new { success = true, maThe = theMoi.MaThe });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+        // 2. Cập nhật vị trí thẻ (Gọi khi Kéo Thả xong)
+        [HttpPost]
+        public JsonResult UpdateCardPosition(int[] cardIds)
+        {
+            // cardIds: Là danh sách ID các thẻ trong cột sau khi đã sắp xếp lại
+            // Ví dụ: [5, 2, 8] nghĩa là thẻ 5 đứng đầu, rồi đến 2, rồi đến 8
+
+            try
+            {
+                int thuTu = 0;
+                foreach (var id in cardIds)
+                {
+                    var the = db.Thes.Find(id);
+                    if (the != null)
+                    {
+                        // Kiểm tra quyền sửa
+                        int userId = GetCurrentUserId();
+                        if (!CanEdit(the.Cot.MaBang, userId))
+                        {
+                            return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                        }
+
+                        // Cập nhật lại thứ tự
+                        the.ThuTu = thuTu;
+                    }
+                    thuTu++;
+                }
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+        // 3. (QUAN TRỌNG) Cập nhật khi kéo sang cột KHÁC
+        // 3. SỬA LẠI HÀM MoveCard CHO AN TOÀN
+        [HttpPost]
+        public JsonResult MoveCard(int maThe, int maCotMoi, int[] cardIds)
+        {
+            try
+            {
+                // Kiểm tra quyền sửa
+                var cotMoi = db.Cots.Find(maCotMoi);
+                if (cotMoi == null)
+                {
+                    return Json(new { success = false, message = "Không thể thực hiện thao tác này" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(cotMoi.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                // 1. Cập nhật cột mới cho thẻ
+                var the = db.Thes.Find(maThe);
+                if (the != null)
+                {
+                    the.MaCot = maCotMoi;
+                }
+
+                // 2. Cập nhật thứ tự (QUAN TRỌNG: Phải kiểm tra null để tránh lỗi crash)
+                if (cardIds != null)
+                {
+                    int thuTu = 0;
+                    foreach (var id in cardIds)
+                    {
+                        var t = db.Thes.Find(id);
+                        if (t != null)
+                        {
+                            t.ThuTu = thuTu;
+                            // Đảm bảo thẻ cũng được cập nhật cột (phòng hờ)
+                            t.MaCot = maCotMoi;
+                        }
+                        thuTu++;
+                    }
+                }
+
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+        // 4. Lấy chi tiết thẻ
+        // 4. Lấy chi tiết thẻ (Đã thêm Deadline)
+        [HttpGet]
+        public JsonResult GetCardDetails(int id)
+        {
+            try
+            {
+                var the = db.Thes.Find(id);
+                if (the != null)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        id = the.MaThe,
+                        title = the.TieuDe,
+                        desc = the.MoTa ?? "",
+                        // Chuyển ngày sang định dạng yyyy-MM-dd để gán vào ô input type="date"
+                        deadline = the.HanChot.HasValue ? the.HanChot.Value.ToString("yyyy-MM-dd") : ""
+                    }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch { }
+            return Json(new { success = false }, JsonRequestBehavior.AllowGet);
+        }
+
+        // 5. Cập nhật thẻ (Đã thêm Deadline)
+        [HttpPost]
+        public JsonResult UpdateCardDetails(int id, string title, string desc, string deadline)
+        {
+            try
+            {
+                var the = db.Thes.Find(id);
+                if (the != null)
+                {
+                    // Kiểm tra quyền sửa
+                    int userId = GetCurrentUserId();
+                    if (!CanEdit(the.Cot.MaBang, userId))
+                    {
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                    }
+
+                    the.TieuDe = title;
+                    the.MoTa = desc;
+
+                    // Xử lý lưu ngày
+                    if (!string.IsNullOrEmpty(deadline))
+                        the.HanChot = DateTime.Parse(deadline);
+                    else
+                        the.HanChot = null; // Người dùng xóa deadline
+
                     db.SaveChanges();
+                    return Json(new { success = true });
                 }
             }
-            // Load lại trang Share để thấy danh sách mới
-            return RedirectToAction("Share", new { id = maBang });
+            catch { }
+            return Json(new { success = false });
         }
-
-        // --- 11. XÓA THÀNH VIÊN ---
-        [HttpPost] // Hoặc HttpGet
-        public ActionResult RemoveMember(int maBang, int maTaiKhoan)
-        {
-            var tv = db.ThanhVienBangs.Where(x => x.MaBang == maBang && x.MaTaiKhoan == maTaiKhoan).FirstOrDefault();
-            if (tv != null)
-            {
-                db.ThanhVienBangs.Remove(tv);
-                db.SaveChanges();
-            }
-            return RedirectToAction("Share", new { id = maBang });
-        }
-
-        // --- 12. CẬP NHẬT QUYỀN ---
+        // 6. Xóa thẻ
         [HttpPost]
-        public ActionResult UpdateRole(int maBang, int maTaiKhoan, string vaiTro)
+        public JsonResult DeleteCard(int id)
         {
-            var tv = db.ThanhVienBangs.Where(x => x.MaBang == maBang && x.MaTaiKhoan == maTaiKhoan).FirstOrDefault();
-            if (tv != null)
+            try
             {
-                tv.VaiTro = vaiTro;
-                db.SaveChanges();
+                var the = db.Thes.Find(id);
+                if (the != null)
+                {
+                    // Kiểm tra quyền sửa
+                    int userId = GetCurrentUserId();
+                    if (!CanEdit(the.Cot.MaBang, userId))
+                    {
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                    }
+
+                    db.Thes.Remove(the);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
             }
-            return RedirectToAction("Share", new { id = maBang });
+            catch { }
+            return Json(new { success = false });
         }
 
-        // --- 13. RỜI BẢNG ---
+        // 7. Tạo cột mới
         [HttpPost]
-        public ActionResult LeaveBoard(int maBang)
+        public JsonResult CreateColumn(int maBang, string tenCot)
         {
-            string email = User.Identity.Name;
-            var user = db.TaiKhoans.Where(u => u.DiaChiEmail == email).FirstOrDefault();
-
-            var tv = db.ThanhVienBangs.Where(x => x.MaBang == maBang && x.MaTaiKhoan == user.MaTaiKhoan).FirstOrDefault();
-            if (tv != null)
+            try
             {
-                db.ThanhVienBangs.Remove(tv);
+                // Kiểm tra quyền sửa
+                int userId = GetCurrentUserId();
+                if (!CanEdit(maBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                var cotMoi = new Cot();
+                cotMoi.MaBang = maBang;
+                cotMoi.TenCot = tenCot;
+
+                // Tính thứ tự: Cho nằm cuối cùng
+                var soLuongCot = db.Cots.Count(c => c.MaBang == maBang);
+                cotMoi.ThuTu = soLuongCot;
+
+                cotMoi.KichHoat = true; // Mặc định là hiện
+
+                db.Cots.Add(cotMoi);
                 db.SaveChanges();
+
+                return Json(new { success = true });
             }
-            return RedirectToAction("Index", "Home");
+            catch
+            {
+                return Json(new { success = false });
+            }
         }
+
+        // 8. Cập nhật vị trí Cột (Kéo thả cột)
+        [HttpPost]
+        public JsonResult UpdateColumnPosition(int[] columnIds)
+        {
+            try
+            {
+                int thuTu = 0;
+                foreach (var id in columnIds)
+                {
+                    var cot = db.Cots.Find(id);
+                    if (cot != null)
+                    {
+                        // Kiểm tra quyền sửa
+                        int userId = GetCurrentUserId();
+                        if (!CanEdit(cot.MaBang, userId))
+                        {
+                            return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                        }
+
+                        cot.ThuTu = thuTu;
+                    }
+                    thuTu++;
+                }
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+        // 9. Cập nhật trạng thái Hoàn thành (Checkbox)
+        [HttpPost]
+        public JsonResult UpdateCardCompletion(int id, bool status)
+        {
+            try
+            {
+                var the = db.Thes.Find(id);
+                if (the != null)
+                {
+                    // Kiểm tra quyền sửa
+                    int userId = GetCurrentUserId();
+                    if (!CanEdit(the.Cot.MaBang, userId))
+                    {
+                        return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                    }
+
+                    the.DaHoanThanh = status; // Lưu trạng thái (true/false)
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+            }
+            catch { }
+            return Json(new { success = false });
+        }
+
+
+
     }
 }

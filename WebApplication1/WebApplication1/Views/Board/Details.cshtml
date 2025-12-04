@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <style>
-    /* CSS Kéo thả & Giao diện Board */
+    /* CSS Kéo thả & Giao diện Board (GIỮ NGUYÊN) */
     .board-container {
         display: flex;
         overflow-x: auto;
@@ -85,7 +85,7 @@
         font-size: 12px;
     }
 
-    /* Nút chức năng kính mờ */
+    /* CSS Nút chức năng kính mờ */
     .btn-glass {
         background-color: rgba(255, 255, 255, 0.2);
         color: white;
@@ -121,7 +121,7 @@
         <div>
             @if (userRole == "owner")
             {
-                <a href="@Url.Action("Share", "Board", new { id = Model.MaBang })" class="btn-glass ml-2">
+                <a href="@Url.Action("Index", "Member", new { maBang = Model.MaBang })" class="btn-glass ml-2">
                     <i class="fa fa-users"></i> Quản lý thành viên
                 </a>
             }
@@ -131,9 +131,14 @@
                 <span class="badge badge-light mr-2" style="font-size: 14px; padding: 10px;">
                     @(userRole == "editor" ? "Bạn là: Editor" : "Bạn là: Viewer")
                 </span>
-                <button class="btn-glass btn-glass-danger" id="btnLeaveBoard" title="Rời khỏi bảng này">
-                    <i class="fa fa-sign-out"></i> Rời bảng
-                </button>
+
+                using (Html.BeginForm("Leave", "Member", FormMethod.Post, new { style = "display:inline;" }))
+                {
+                    <input type="hidden" name="maBang" value="@Model.MaBang" />
+                    <button type="submit" class="btn-glass btn-glass-danger" style="border:none; cursor:pointer;" onclick="return confirm('Rời bảng?');">
+                        <i class="fa fa-sign-out"></i> Rời bảng
+                    </button>
+                }
             }
         </div>
     </div>
@@ -169,9 +174,7 @@
                                             </div>
                                             <div class="card-infos d-flex align-items-center mt-1" style="gap: 10px;">
                                                 @if (!string.IsNullOrEmpty(the.MoTa))
-                                                {
-                                                    <div class="card-desc-icon small text-muted"><i class="fa fa-align-left"></i></div>
-                                                }
+                                                {<div class="card-desc-icon small text-muted"><i class="fa fa-align-left"></i></div>}
                                                 @if (the.HanChot != null)
                                                 {
                                                     var deadlineClass = (the.HanChot < DateTime.Now && !the.DaHoanThanh.GetValueOrDefault()) ? "text-danger font-weight-bold" : "text-muted";
@@ -206,7 +209,7 @@
         <div class="modal-content">
             <div class="modal-header" style="border-bottom: none;">
                 <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ..." @(!canEdit ? "readonly" : "")>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalCardId">
@@ -237,6 +240,7 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
     <script>
+        // CÁC BIẾN JS CẦN THIẾT
         var canEdit = @Html.Raw(Json.Encode(canEdit));
         var maBang = @Html.Raw(Json.Encode(Model.MaBang));
         var themeColor = @Html.Raw(Json.Encode(themeColor));
@@ -244,21 +248,8 @@
         $("body").css("background-color", themeColor);
 
         $(document).ready(function () {
-            // === LOGIC RỜI BẢNG (MỚI) ===
-            $('#btnLeaveBoard').click(function() {
-                if (confirm('Bạn có chắc muốn rời khỏi bảng này không? Bạn sẽ mất quyền truy cập.')) {
-                    $.post('/Board/LeaveBoard', { maBang: maBang }, function(res) {
-                        if (res.success) {
-                            alert('Đã rời bảng thành công!');
-                            window.location.href = '/Home/Index';
-                        } else {
-                            alert(res.message);
-                        }
-                    });
-                }
-            });
 
-            // === LOGIC KANBAN (GIỮ NGUYÊN) ===
+            // 1. KÉO THẢ THẺ
             if (canEdit) {
                 $(".card-list").sortable({
                     connectWith: ".card-list", placeholder: "ui-state-highlight", items: ".kanban-card",
@@ -283,6 +274,7 @@
                 });
             }
 
+            // 2. THÊM THẺ MỚI
             $(".add-card-btn").click(function () {
                 if (!canEdit) return;
                 var colId = $(this).data("column-id");
@@ -290,12 +282,14 @@
                 if (title) $.post('/Board/CreateCard', { maCot: colId, noiDung: title }, function(r) { if(r.success) location.reload(); });
             });
 
+            // 3. THÊM CỘT MỚI
             $("#btnAddColumn").click(function () {
                 if (!canEdit) return;
                 var name = prompt("Tên danh sách:");
                 if (name) $.post("/Board/CreateColumn", { maBang: maBang, tenCot: name }, function(r) { if(r.success) location.reload(); });
             });
 
+            // 4. CHECKBOX
             $(document).on("click", ".stop-prop", function(e) { e.stopPropagation(); });
             $(document).on("change", ".card-checkbox", function() {
                 if (!canEdit) return;
@@ -311,6 +305,7 @@
                 $.post("/Board/UpdateCardCompletion", { id: $(this).data("id"), status: isChecked });
             });
 
+            // 5. CHI TIẾT THẺ (MODAL)
             $(document).on("click", ".kanban-card", function () {
                 var id = $(this).data("id");
                 $.get("/Board/GetCardDetails/" + id, function (data) {
