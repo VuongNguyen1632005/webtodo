@@ -14,7 +14,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .login-box {
@@ -22,7 +23,8 @@
             padding: 40px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 400px;
+            width: 100%;
+            max-width: 500px;
         }
 
         .btn-trello {
@@ -39,27 +41,62 @@
 </head>
 <body>
     <div class="login-box">
-        <h3 class="text-center mb-4" style="color: #0079bf;">Trello Clone</h3>
+        <h3 class="text-center mb-4" style="color: #0079bf;">🔐 Trello Clone</h3>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <strong>✓ @TempData["SuccessMessage"]</strong>
+            </div>
+        }
 
         @if (ViewBag.Error != null)
         {
-            <div class="alert alert-danger">@ViewBag.Error</div>
+            <div class="alert alert-danger">
+                <strong>@ViewBag.Error</strong>
+                @if (ViewBag.ErrorDetail != null)
+                {
+                    <hr />
+                    <small><strong>Chi tiết:</strong> @ViewBag.ErrorDetail</small>
+                }
+            </div>
+        }
+
+        @if (ViewBag.Solution != null)
+        {
+            <div class="alert alert-warning">
+                @Html.Raw(ViewBag.Solution)
+            </div>
+        }
+
+        @if (ViewBag.DebugInfo != null)
+        {
+            <div class="alert alert-info" style="font-size: 0.85em;">
+                <strong>Debug Info:</strong><br />
+                @ViewBag.DebugInfo
+            </div>
         }
 
         <form action="/Account/Login" method="post">
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="email" class="form-control" required placeholder="Nhập email..." />
+                <input type="email" name="email" class="form-control" required placeholder="admin@test.com" />
             </div>
             <div class="form-group">
                 <label>Mật khẩu</label>
-                <input type="password" name="password" class="form-control" required placeholder="Nhập mật khẩu..." />
+                <input type="password" name="password" class="form-control" required placeholder="123" />
             </div>
             <button type="submit" class="btn btn-trello btn-block">Đăng Nhập</button>
         </form>
 
         <div class="text-center mt-3">
             <a href="/Account/Register">Chưa có tài khoản? Đăng ký</a>
+        </div>
+
+        <hr class="my-4" />
+        
+        <div class="text-center">
+            <small class="text-muted">Tài khoản mặc định: <code>admin@test.com</code> / <code>123</code></small>
         </div>
     </div>
 </body>

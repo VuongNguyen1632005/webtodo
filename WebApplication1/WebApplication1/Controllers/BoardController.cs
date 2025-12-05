@@ -512,7 +512,119 @@ namespace WebApplication1.Controllers
             return Json(new { success = false });
         }
 
+        // 10. Lấy danh sách comment của thẻ
+        [HttpGet]
+        public JsonResult GetCardComments(int maThe)
+        {
+            try
+            {
+                int userId = GetCurrentUserId();
+                var currentUser = db.TaiKhoans.Find(userId);
+                
+                var comments = db.GhiChus
+                    .Where(g => g.MaThe == maThe)
+                    .OrderByDescending(g => g.NgayTao)
+                    .Select(g => new
+                    {
+                        id = g.MaGhiChu,
+                        content = g.NoiDung,
+                        createdAt = g.NgayTao,
+                        // Tạm thời dùng email làm tên người comment
+                        // Sau này có thể thêm quan hệ với TaiKhoan nếu muốn
+                        userName = "Người dùng"
+                    })
+                    .ToList();
 
+                return Json(new
+                {
+                    success = true,
+                    comments = comments,
+                    currentUserName = currentUser?.HoTen ?? "Bạn"
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
 
+        // 11. Thêm comment mới
+        [HttpPost]
+        public JsonResult AddCardComment(int maThe, string content)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return Json(new { success = false, message = "Nội dung không được trống" });
+                }
+
+                var the = db.Thes.Find(maThe);
+                if (the == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thẻ" });
+                }
+
+                // Kiểm tra quyền xem
+                int userId = GetCurrentUserId();
+                if (!CanView(the.Cot.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                var currentUser = db.TaiKhoans.Find(userId);
+                
+                var comment = new GhiChu
+                {
+                    MaThe = maThe,
+                    NoiDung = content.Trim(),
+                    NgayTao = DateTime.Now
+                };
+
+                db.GhiChus.Add(comment);
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    comment = new
+                    {
+                        id = comment.MaGhiChu,
+                        content = comment.NoiDung,
+                        createdAt = comment.NgayTao,
+                        userName = currentUser?.HoTen ?? "Bạn"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // 12. Xóa comment
+        [HttpPost]
+        public JsonResult DeleteCardComment(int id)
+        {
+            try
+            {
+                var comment = db.GhiChus.Find(id);
+                if (comment != null)
+                {
+                    // Kiểm tra quyền sửa
+                    int userId = GetCurrentUserId();
+                    var the = db.Thes.Find(comment.MaThe);
+                    if (the != null && CanEdit(the.Cot.MaBang, userId))
+                    {
+                        db.GhiChus.Remove(comment);
+                        db.SaveChanges();
+                        return Json(new { success = true });
+                    }
+                    return Json(new { success = false, message = "Bạn không có quyền xóa comment này" });
+                }
+            }
+            catch { }
+            return Json(new { success = false });
+        }
     }
 }
