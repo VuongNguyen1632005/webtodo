@@ -1,0 +1,216 @@
+﻿@model WebApplication1.Models.Bang
+
+@{
+    ViewBag.Title = "Quản lý thành viên - " + Model.TenBang;
+    var themeColor = Model.MauNen ?? "#026AA7";
+}
+
+<style>
+    .member-item {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        transition: background 0.2s;
+    }
+
+        .member-item:hover {
+            background-color: #f9f9f9;
+        }
+
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        margin-right: 15px;
+        text-transform: uppercase;
+    }
+
+    .user-info {
+        flex-grow: 1;
+    }
+
+    .user-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .user-email {
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .role-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .role-owner {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .role-editor {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .role-viewer {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    .bg-light-yellow {
+        background-color: #fffff0;
+    }
+</style>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show m-3">
+        @TempData["Message"]
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show m-3">
+        @TempData["Error"]
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+}
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="@Url.Action("Details", "Board", new { id = Model.MaBang })" class="btn btn-outline-secondary border-0 mb-2">
+                <i class="fa fa-arrow-left"></i> Quay lại bảng
+            </a>
+            <h2 class="font-weight-bold" style="color: @themeColor">
+                <i class="fa fa-users mr-2"></i>Chia sẻ & Phân quyền
+            </h2>
+            <p class="text-muted">Quản lý thành viên cho bảng: <strong>@Model.TenBang</strong></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body bg-light rounded">
+                    <h5 class="font-weight-bold mb-3">Mời thành viên mới</h5>
+
+                    @using (Html.BeginForm("Add", "Member", FormMethod.Post))
+                    {
+                        <input type="hidden" name="maBang" value="@Model.MaBang" />
+
+                        <div class="form-group">
+                            <label>Địa chỉ Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="vidu@email.com" style="height: 50px;" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Vai trò</label>
+                            <select name="vaiTro" class="form-control" style="height: 50px;">
+                                <option value="viewer">Chỉ xem (Viewer)</option>
+                                <option value="editor">Được chỉnh sửa (Editor)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-block text-white font-weight-bold py-3 mt-4"
+                                style="background-color: @themeColor; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <i class="fa fa-paper-plane mr-1"></i> Gửi lời mời
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4">
+                    <h5 class="font-weight-bold">Danh sách thành viên hiện tại</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+
+                        <div class="member-item border-bottom bg-light-yellow">
+                            <div class="avatar-circle" style="background: #f2d600">
+                                @(Model.TaiKhoan.HoTen.Substring(0, 1).ToUpper())
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">
+                                    @Model.TaiKhoan.HoTen
+                                    <span class="role-badge role-owner ml-2">Chủ sở hữu</span>
+                                </div>
+                                <div class="user-email">@Model.TaiKhoan.DiaChiEmail</div>
+                            </div>
+                        </div>
+
+                        @foreach (var tv in Model.ThanhVienBangs)
+                        {
+                            <div class="member-item border-bottom">
+                                <div class="avatar-circle" style="background: #0079bf">
+                                    @(tv.TaiKhoan.HoTen != null ? tv.TaiKhoan.HoTen.Substring(0,1).ToUpper() : "?")
+                                </div>
+                                <div class="user-info">
+                                    <div class="user-name">
+                                        @tv.TaiKhoan.HoTen
+                                        <span class="role-badge @(tv.VaiTro=="editor"?"role-editor":"role-viewer") ml-2">
+                                            @tv.VaiTro
+                                        </span>
+                                    </div>
+                                    <div class="user-email">@tv.TaiKhoan.DiaChiEmail</div>
+                                </div>
+
+                                <div class="d-flex align-items-center">
+
+                                    @using (Html.BeginForm("UpdateRole", "Member", FormMethod.Post, new { @class = "mr-2" }))
+                                    {
+                                        <input type="hidden" name="maBang" value="@Model.MaBang" />
+                                        <input type="hidden" name="maTaiKhoan" value="@tv.MaTaiKhoan" />
+
+                                        <div class="input-group input-group-sm">
+                                            <select name="vaiTro" class="form-control" style="width: 100px;">
+                                                <option value="viewer" @(tv.VaiTro == "viewer" ? "selected" : "")>Viewer</option>
+                                                <option value="editor" @(tv.VaiTro == "editor" ? "selected" : "")>Editor</option>
+                                            </select>
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="submit" title="Lưu">💾</button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @using (Html.BeginForm("Remove", "Member", FormMethod.Post))
+                                    {
+                                        <input type="hidden" name="maBang" value="@Model.MaBang" />
+                                        <input type="hidden" name="maTaiKhoan" value="@tv.MaTaiKhoan" />
+
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Bạn có chắc chắn muốn mời người này ra khỏi bảng?');" title="Xóa thành viên">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.ThanhVienBangs.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                Chưa có thành viên nào được mời.
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

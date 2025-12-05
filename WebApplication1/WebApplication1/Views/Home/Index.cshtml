@@ -6,10 +6,35 @@
     var bangDuocChiaSe = ViewBag.BangDuocChiaSe as List<WebApplication1.Models.Bang> ?? new List<WebApplication1.Models.Bang>();
 }
 
+<style>
+    /* Nút màu xanh Trello đồng bộ với Navbar */
+    .btn-main-trello {
+        background-color: #026AA7;
+        border-color: #026AA7;
+        color: white;
+        font-weight: bold;
+        padding: 8px 16px;
+        transition: all 0.2s;
+    }
+
+        .btn-main-trello:hover {
+            background-color: #015a8e; 
+            border-color: #015a8e;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+</style>
+
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>🗂️ Các Bảng Của Tôi</h2>
-        <button class="btn btn-primary">+ Tạo bảng mới</button>
+        <h2 class="text-dark font-weight-bold" style="font-size: 1.5rem;">
+            <i class="fa fa-user-circle mr-2"></i> Các Bảng Của Tôi
+        </h2>
+
+        <button class="btn btn-main-trello shadow-sm" data-toggle="modal" data-target="#createBoardModal">
+            <i class="fa fa-plus"></i> Tạo bảng mới
+        </button>
     </div>
 
     <div class="row">
@@ -18,10 +43,10 @@
             foreach (var bang in bangCuaToi)
             {
                 <div class="col-md-3 mb-4">
-                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm"
-                       style="background-color: @bang.MauNen; height: 120px;">
+                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm h-100 border-0"
+                       style="background-color: @(bang.MauNen ?? "#0079bf"); min-height: 120px; transition: transform 0.2s;">
                         <div class="card-body">
-                            <h5 class="card-title font-weight-bold">@bang.TenBang</h5>
+                            <h5 class="card-title font-weight-bold text-truncate">@bang.TenBang</h5>
                         </div>
                     </a>
                 </div>
@@ -29,28 +54,34 @@
         }
         else
         {
-            <div class="col-12 text-center text-muted">
-                <p>Bạn chưa có bảng nào. Hãy tạo bảng mới!</p>
+            <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+                <i class="fa fa-clipboard-list fa-3x mb-3 text-secondary"></i>
+                <p class="mb-0">Bạn chưa có bảng nào.</p>
+                <p>Hãy bấm nút tạo mới để bắt đầu công việc!</p>
             </div>
         }
     </div>
 
     @if (bangDuocChiaSe.Any())
     {
-        <hr class="my-4">
-        <h3>📤 Bảng Được Chia Sẻ</h3>
-        <div class="row mt-3">
+        <hr class="my-5">
+        <h3 class="text-dark font-weight-bold mb-4" style="font-size: 1.5rem;">
+            <i class="fa fa-users mr-2"></i> Bảng Được Chia Sẻ
+        </h3>
+        <div class="row">
             @foreach (var bang in bangDuocChiaSe)
             {
                 <div class="col-md-3 mb-4">
-                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm"
-                       style="background-color: @bang.MauNen; height: 120px; position: relative;">
+                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm h-100 border-0"
+                       style="background-color: @(bang.MauNen ?? "#0079bf"); min-height: 120px; position: relative;">
                         <div class="card-body">
-                            <h5 class="card-title font-weight-bold">@bang.TenBang</h5>
-                            <small class="text-white-50">Chủ sở hữu: @bang.TaiKhoan.HoTen</small>
+                            <h5 class="card-title font-weight-bold text-truncate">@bang.TenBang</h5>
+                            <small class="text-white-50 d-block mt-2">
+                                <i class="fa fa-user-shield"></i> Chủ: @(bang.TaiKhoan != null ? bang.TaiKhoan.HoTen : "Unknown")
+                            </small>
                         </div>
-                        <span class="badge badge-light" style="position: absolute; top: 5px; right: 5px;">
-                            <i class="fa fa-share-alt"></i>
+                        <span class="badge badge-light text-dark shadow-sm" style="position: absolute; top: 10px; right: 10px;">
+                            <i class="fa fa-share-alt"></i> Shared
                         </span>
                     </a>
                 </div>
@@ -58,3 +89,16 @@
         </div>
     }
 </div>
+
+<script>
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)';
+            card.style.filter = 'brightness(1.1)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+            card.style.filter = 'brightness(1)';
+        });
+    });
+</script>

@@ -26,17 +26,17 @@ namespace WebApplication1.Controllers
             // Nếu userId không hợp lệ, trả về "none"
             if (maTaiKhoan < 0)
                 return "none";
-                
+
             var bang = db.Bangs.Find(maBang);
-            
+
             // Chủ sở hữu
             if (bang?.MaNguoiSoHuu == maTaiKhoan)
                 return "owner";
-            
+
             // Thành viên được chia sẻ
             var thanhVien = db.ThanhVienBangs
                 .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
-            
+
             return thanhVien?.VaiTro ?? "none";
         }
 
@@ -62,7 +62,7 @@ namespace WebApplication1.Controllers
         public ActionResult Details(int id)
         {
             int userId = GetCurrentUserId();
-            
+
             // 1. Tìm bảng theo ID
             var board = db.Bangs.FirstOrDefault(b => b.MaBang == id);
 
@@ -86,12 +86,12 @@ namespace WebApplication1.Controllers
         public JsonResult ShareBoard(int maBang, string email, string vaiTro)
         {
             int userId = GetCurrentUserId();
-            
+
             if (!CanManage(maBang, userId))
             {
                 return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
-            
+
             var taiKhoan = db.TaiKhoans.FirstOrDefault(t => t.DiaChiEmail == email);
             if (taiKhoan == null)
             {
@@ -104,15 +104,15 @@ namespace WebApplication1.Controllers
             {
                 return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
-            
+
             var existing = db.ThanhVienBangs
                 .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == taiKhoan.MaTaiKhoan);
-            
+
             if (existing != null)
             {
                 return Json(new { success = false, message = "Không thể mời người dùng này" });
             }
-            
+
             var thanhVien = new ThanhVienBang
             {
                 MaBang = maBang,
@@ -120,10 +120,10 @@ namespace WebApplication1.Controllers
                 VaiTro = vaiTro,
                 NgayThamGia = DateTime.Now
             };
-            
+
             db.ThanhVienBangs.Add(thanhVien);
             db.SaveChanges();
-            
+
             return Json(new { success = true });
         }
 
@@ -138,7 +138,7 @@ namespace WebApplication1.Controllers
             }
 
             var members = new List<object>();
-            
+
             // Thêm chủ sở hữu
             members.Add(new
             {
@@ -147,7 +147,7 @@ namespace WebApplication1.Controllers
                 email = bang.TaiKhoan.DiaChiEmail,
                 vaiTro = "owner"
             });
-            
+
             // Thêm các thành viên
             var thanhViens = db.ThanhVienBangs
                 .Where(tv => tv.MaBang == maBang)
@@ -158,9 +158,9 @@ namespace WebApplication1.Controllers
                     email = tv.TaiKhoan.DiaChiEmail,
                     vaiTro = tv.VaiTro
                 }).ToList();
-            
+
             members.AddRange(thanhViens);
-            
+
             return Json(members, JsonRequestBehavior.AllowGet);
         }
 
@@ -169,21 +169,21 @@ namespace WebApplication1.Controllers
         public JsonResult RemoveMember(int maBang, int maTaiKhoan)
         {
             int userId = GetCurrentUserId();
-            
+
             if (!CanManage(maBang, userId))
             {
                 return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
-            
+
             var thanhVien = db.ThanhVienBangs
                 .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
-            
+
             if (thanhVien != null)
             {
                 db.ThanhVienBangs.Remove(thanhVien);
                 db.SaveChanges();
             }
-            
+
             return Json(new { success = true });
         }
 
@@ -192,21 +192,21 @@ namespace WebApplication1.Controllers
         public JsonResult UpdateMemberRole(int maBang, int maTaiKhoan, string vaiTroMoi)
         {
             int userId = GetCurrentUserId();
-            
+
             if (!CanManage(maBang, userId))
             {
                 return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
             }
-            
+
             var thanhVien = db.ThanhVienBangs
                 .FirstOrDefault(tv => tv.MaBang == maBang && tv.MaTaiKhoan == maTaiKhoan);
-            
+
             if (thanhVien != null)
             {
                 thanhVien.VaiTro = vaiTroMoi;
                 db.SaveChanges();
             }
-            
+
             return Json(new { success = true });
         }
 

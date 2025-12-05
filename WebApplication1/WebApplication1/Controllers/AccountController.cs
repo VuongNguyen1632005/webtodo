@@ -3,7 +3,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security; // Thư viện bảo mật login
-using WebApplication1.Models; // Đổi thành tên Project của bạn
+using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
 {
@@ -11,13 +11,13 @@ namespace WebApplication1.Controllers
     {
         private QL_DUANCANHAN_LITEEntities db = new QL_DUANCANHAN_LITEEntities();
 
-        // 1. Trang Đăng Ký (GET)
+        // Trang Đăng Ký (GET)
         public ActionResult Register()
         {
             return View();
         }
 
-        // 2. Xử lý Đăng Ký (POST)
+        // Xử lý Đăng Ký (POST)
         [HttpPost]
         public ActionResult Register(TaiKhoan model)
         {
@@ -30,7 +30,7 @@ namespace WebApplication1.Controllers
                     return View(model);
                 }
 
-                // Lưu vào DB (Lưu ý: Tạm thời lưu pass thường, sau này thêm mã hóa sau cho nhanh)
+                // Lưu vào DB 
                 db.TaiKhoans.Add(model);
                 db.SaveChanges();
 
@@ -39,13 +39,13 @@ namespace WebApplication1.Controllers
             return View(model);
         }
 
-        // 3. Trang Đăng Nhập (GET)
+        // Trang Đăng Nhập (GET)
         public ActionResult Login()
         {
             return View();
         }
 
-        // 4. Xử lý Đăng Nhập (POST)
+        //Xử lý Đăng Nhập (POST)
         [HttpPost]
         public ActionResult Login(string email, string password)
         {
@@ -55,10 +55,16 @@ namespace WebApplication1.Controllers
             if (user != null)
             {
                 // Login thành công!
-                // Lưu cookie phiên đăng nhập (Lưu Email vào cookie)
+
+                // Lưu Email để hệ thống biết đã đăng nhập
                 FormsAuthentication.SetAuthCookie(user.DiaChiEmail, false);
 
-                // Chuyển hướng về trang chủ
+                // Lưu Họ Tên vào Session để dùng ở _Layout
+                Session["HoTen"] = user.HoTen;
+
+                // Lưu thêm ID người dùng nếu cần dùng nhiều
+                Session["MaTaiKhoan"] = user.MaTaiKhoan;
+
                 return RedirectToAction("Index", "Home");
             }
 
@@ -67,7 +73,7 @@ namespace WebApplication1.Controllers
             return View();
         }
 
-        // 5. Đăng Xuất
+        // Đăng Xuất
         public ActionResult Logout()
         {
             FormsAuthentication.SignOut();
