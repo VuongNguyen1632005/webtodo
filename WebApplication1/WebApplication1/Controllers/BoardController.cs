@@ -59,6 +59,41 @@ namespace WebApplication1.Controllers
 
         #endregion
 
+        [HttpPost]
+        public ActionResult CreateBoard(string tenBang, string mauNen)
+        {
+            try
+            {
+                //Lấy user hiện tại
+                int userId = GetCurrentUserId();
+                if (userId == -1) return RedirectToAction("Index", "Home");
+
+                //Tạo bảng mới
+                var b = new Bang();
+                b.TenBang = tenBang;
+                b.MauNen = mauNen;
+                b.MaNguoiSoHuu = userId;
+                b.NgayTao = DateTime.Now;
+
+                db.Bangs.Add(b);
+                db.SaveChanges();
+
+                // Tạo 3 cột mặc định
+                var c1 = new Cot() { TenCot = "Cần làm", ThuTu = 0, KichHoat = true, MaBang = b.MaBang };
+                var c2 = new Cot() { TenCot = "Đang làm", ThuTu = 1, KichHoat = true, MaBang = b.MaBang };
+                var c3 = new Cot() { TenCot = "Đã xong", ThuTu = 2, KichHoat = true, MaBang = b.MaBang };
+
+                db.Cots.Add(c1); db.Cots.Add(c2); db.Cots.Add(c3);
+                db.SaveChanges();
+
+                // Tạo xong thì chuyển hướng vào trang chi tiết
+                return RedirectToAction("Details", new { id = b.MaBang });
+            }
+            catch
+            {
+                return RedirectToAction("Index", "Home");
+            }
+        }
         public ActionResult Details(int id)
         {
             int userId = GetCurrentUserId();
