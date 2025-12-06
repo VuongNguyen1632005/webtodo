@@ -115,39 +115,30 @@ namespace WebApplication1.Controllers
 
                 if (user != null)
                 {
-                    // Login thành công!
+                
 
-                    // Lưu Email để hệ thống biết đã đăng nhập
+                 
                     FormsAuthentication.SetAuthCookie(user.DiaChiEmail, false);
 
-                    // Lưu Họ Tên vào Session để dùng ở _Layout
+                  
                     Session["HoTen"] = user.HoTen;
 
-                    // Lưu thêm ID người dùng nếu cần dùng nhiều
+                 
                     Session["MaTaiKhoan"] = user.MaTaiKhoan;
 
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Login thất bại - chỉ hiện thông báo chung (không hiển thị debug info)
+              
                 ViewBag.Error = "Sai email hoặc mật khẩu!";
                 return View();
             }
             catch (System.Data.Entity.Core.EntityException ex)
             {
-                // Lỗi kết nối database
+              
                 ViewBag.Error = "❌ Không thể kết nối tới SQL Server!";
                 ViewBag.ErrorDetail = ex.InnerException?.Message ?? ex.Message;
-                ViewBag.Solution = @"
-<strong>Cách khắc phục:</strong><br/>
-1. Mở <b>SQL Server Management Studio (SSMS)</b><br/>
-2. Kết nối với server: <code>(localdb)\MSSQLLocalDB</code><br/>
-3. Kiểm tra database <b>QL_DUANCANHAN_LITE</b> có tồn tại chưa<br/>
-4. Nếu chưa có, database đã được tạo tự động<br/>
-5. Chạy lại script: <code>sqlcmd -S ""(localdb)\MSSQLLocalDB"" -i ""CreateDB_LocalDB.sql""</code><br/>
-<br/>
-<strong>Connection string hiện tại:</strong> (localdb)\MSSQLLocalDB
-";
+                ViewBag.Solution = @" ";
                 return View();
             }
             catch (Exception ex)
