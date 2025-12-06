@@ -129,29 +129,7 @@ namespace WebApplication1.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Login thất bại - thử lấy debug info
-                try
-                {
-                    var allUsers = db.TaiKhoans.Select(u => new { u.DiaChiEmail, u.MatKhau }).ToList();
-                    var debugInfo = $"Email nhập: '{email}', Password: '{password}'. ";
-                    debugInfo += $"Tổng số user trong DB: {allUsers.Count}. ";
-
-                    if (allUsers.Count > 0)
-                    {
-                        debugInfo += "Danh sách user: " + string.Join(", ", allUsers.Select(u => $"[{u.DiaChiEmail}/{u.MatKhau}]"));
-                    }
-                    else
-                    {
-                        debugInfo += "Database không có user nào!";
-                    }
-
-                    ViewBag.DebugInfo = debugInfo;
-                }
-                catch
-                {
-                    // Nếu không lấy được debug info thì thôi
-                }
-
+                // Login thất bại - chỉ hiện thông báo chung (không hiển thị debug info)
                 ViewBag.Error = "Sai email hoặc mật khẩu!";
                 return View();
             }

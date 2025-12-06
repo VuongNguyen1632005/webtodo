@@ -1,10 +1,4 @@
--- ============================================
--- Script t?o Database: QL_DUANCANHAN_LITE
--- ?ng d?ng: Web Todo - Qu?n l˝ d? ·n c· nh‚n
--- Ng‡y t?o: Auto-generated from Entity Framework
--- ============================================
-
--- T?o Database (n?u ch?a cÛ)
+Ôªø
 IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'QL_DUANCANHAN_LITE')
 BEGIN
     CREATE DATABASE QL_DUANCANHAN_LITE;
@@ -14,9 +8,7 @@ GO
 USE QL_DUANCANHAN_LITE;
 GO
 
--- ============================================
--- 1. B?NG T¿I KHO?N (Users)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'TaiKhoan')
 BEGIN
     CREATE TABLE TaiKhoan (
@@ -26,13 +18,10 @@ BEGIN
         HoTen NVARCHAR(100) NULL,
         AnhDaiDien NVARCHAR(500) NULL
     );
-    PRINT N'?„ t?o b?ng TaiKhoan';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng TaiKhoan';
 END
 GO
 
--- ============================================
--- 2. B?NG B?NG (Boards)
--- ============================================
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Bang')
 BEGIN
     CREATE TABLE Bang (
@@ -45,13 +34,11 @@ BEGIN
         CONSTRAINT FK_Bang_TaiKhoan FOREIGN KEY (MaNguoiSoHuu) 
             REFERENCES TaiKhoan(MaTaiKhoan) ON DELETE NO ACTION
     );
-    PRINT N'?„ t?o b?ng Bang';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng Bang';
 END
 GO
 
--- ============================================
--- 3. B?NG C?T (Columns/Lists)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Cot')
 BEGIN
     CREATE TABLE Cot (
@@ -64,13 +51,11 @@ BEGIN
         CONSTRAINT FK_Cot_Bang FOREIGN KEY (MaBang) 
             REFERENCES Bang(MaBang) ON DELETE CASCADE
     );
-    PRINT N'?„ t?o b?ng Cot';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng Cot';
 END
 GO
 
--- ============================================
--- 4. B?NG TH? (Cards)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'The')
 BEGIN
     CREATE TABLE The (
@@ -85,13 +70,11 @@ BEGIN
         CONSTRAINT FK_The_Cot FOREIGN KEY (MaCot) 
             REFERENCES Cot(MaCot) ON DELETE CASCADE
     );
-    PRINT N'?„ t?o b?ng The';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng The';
 END
 GO
 
--- ============================================
--- 5. B?NG GHI CH⁄ (Comments)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'GhiChu')
 BEGIN
     CREATE TABLE GhiChu (
@@ -106,13 +89,11 @@ BEGIN
         CONSTRAINT FK_GhiChu_TaiKhoan FOREIGN KEY (MaTaiKhoan) 
             REFERENCES TaiKhoan(MaTaiKhoan) ON DELETE SET NULL
     );
-    PRINT N'?„ t?o b?ng GhiChu';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng GhiChu';
 END
 GO
 
--- ============================================
--- 6. B?NG M?C TI U (Checklist Items)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MucTieu')
 BEGIN
     CREATE TABLE MucTieu (
@@ -125,13 +106,11 @@ BEGIN
         CONSTRAINT FK_MucTieu_The FOREIGN KEY (MaThe) 
             REFERENCES The(MaThe) ON DELETE CASCADE
     );
-    PRINT N'?„ t?o b?ng MucTieu';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng MucTieu';
 END
 GO
 
--- ============================================
--- 7. B?NG TH¿NH VI N B?NG (Board Members)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ThanhVienBang')
 BEGIN
     CREATE TABLE ThanhVienBang (
@@ -146,13 +125,11 @@ BEGIN
         CONSTRAINT FK_ThanhVienBang_TaiKhoan FOREIGN KEY (MaTaiKhoan) 
             REFERENCES TaiKhoan(MaTaiKhoan) ON DELETE NO ACTION
     );
-    PRINT N'?„ t?o b?ng ThanhVienBang';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng ThanhVienBang';
 END
 GO
 
--- ============================================
--- 8. B?NG NH√N C?A B?NG (Board Labels)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'NhanCuaBang')
 BEGIN
     CREATE TABLE NhanCuaBang (
@@ -164,13 +141,11 @@ BEGIN
         CONSTRAINT FK_NhanCuaBang_Bang FOREIGN KEY (MaBang) 
             REFERENCES Bang(MaBang) ON DELETE CASCADE
     );
-    PRINT N'?„ t?o b?ng NhanCuaBang';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng NhanCuaBang';
 END
 GO
 
--- ============================================
--- 9. B?NG NH√N C?A TH? (Card Labels - Many-to-Many)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'NhanCuaThe')
 BEGIN
     CREATE TABLE NhanCuaThe (
@@ -184,13 +159,11 @@ BEGIN
             REFERENCES The(MaThe) ON DELETE CASCADE,
         CONSTRAINT UQ_NhanCuaThe UNIQUE (MaNhanCuaBang, MaThe)
     );
-    PRINT N'?„ t?o b?ng NhanCuaThe';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng NhanCuaThe';
 END
 GO
 
--- ============================================
--- 10. B?NG TH¿NH VI N C?A TH? (Card Members - Many-to-Many)
--- ============================================
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ThanhVienCuaThe')
 BEGIN
     CREATE TABLE ThanhVienCuaThe (
@@ -205,60 +178,53 @@ BEGIN
             REFERENCES TaiKhoan(MaTaiKhoan) ON DELETE NO ACTION,
         CONSTRAINT UQ_ThanhVienCuaThe UNIQUE (MaThe, MaTaiKhoan)
     );
-    PRINT N'?„ t?o b?ng ThanhVienCuaThe';
+    PRINT N'ƒê√£ t·∫°o b·∫£ng ThanhVienCuaThe';
 END
 GO
 
--- ============================================
--- T?O INDEX ?? T?I ?U TRUY V?N
--- ============================================
 
--- Index cho b?ng Bang
+
+-- Index cho b·∫£ng Bang
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bang_MaNguoiSoHuu')
     CREATE INDEX IX_Bang_MaNguoiSoHuu ON Bang(MaNguoiSoHuu);
 
--- Index cho b?ng Cot
+-- Index cho b·∫£ng Cot
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Cot_MaBang')
     CREATE INDEX IX_Cot_MaBang ON Cot(MaBang);
 
--- Index cho b?ng The
+-- Index cho b·∫£ng The
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_The_MaCot')
     CREATE INDEX IX_The_MaCot ON The(MaCot);
 
--- Index cho b?ng GhiChu
+-- Index cho b·∫£ng GhiChu
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_GhiChu_MaThe')
     CREATE INDEX IX_GhiChu_MaThe ON GhiChu(MaThe);
 
--- Index cho b?ng MucTieu
+-- Index cho b·∫£ng MucTieu
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_MucTieu_MaThe')
     CREATE INDEX IX_MucTieu_MaThe ON MucTieu(MaThe);
 
--- Index cho b?ng NhanCuaBang
+-- Index cho b·∫£ng NhanCuaBang
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NhanCuaBang_MaBang')
     CREATE INDEX IX_NhanCuaBang_MaBang ON NhanCuaBang(MaBang);
 
--- Index cho b?ng NhanCuaThe
+-- Index cho b·∫£ng NhanCuaThe
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_NhanCuaThe_MaThe')
     CREATE INDEX IX_NhanCuaThe_MaThe ON NhanCuaThe(MaThe);
 
--- Index cho b?ng ThanhVienCuaThe
+-- Index cho b·∫£ng ThanhVienCuaThe
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ThanhVienCuaThe_MaThe')
     CREATE INDEX IX_ThanhVienCuaThe_MaThe ON ThanhVienCuaThe(MaThe);
 
-PRINT N'?„ t?o c·c Index';
+PRINT N'ƒê√£ t·∫°o c√°c Index';
 GO
 
--- ============================================
--- D? LI?U M?U (OPTIONAL - CÛ th? b? qua)
--- ============================================
 
--- T?o t‡i kho?n admin m?u (password: 123456)
--- L?u ˝: Trong th?c t? c?n hash password
 IF NOT EXISTS (SELECT * FROM TaiKhoan WHERE DiaChiEmail = 'admin@example.com')
 BEGIN
     INSERT INTO TaiKhoan (DiaChiEmail, MatKhau, HoTen)
     VALUES ('admin@example.com', '123456', N'Admin');
-    PRINT N'?„ t?o t‡i kho?n admin m?u';
+    PRINT N'ƒê√£ t·∫°o t√†i kho·∫£n admin m·∫´u';
 END
 GO
 
@@ -269,32 +235,22 @@ IF @AdminId IS NOT NULL AND NOT EXISTS (SELECT * FROM Bang WHERE MaNguoiSoHuu = 
 BEGIN
     -- T?o b?ng
     INSERT INTO Bang (MaNguoiSoHuu, TenBang, MauNen)
-    VALUES (@AdminId, N'D? ·n m?u', '#0079bf');
+    VALUES (@AdminId, N'D·ª± √°n m·∫´u', '#0079bf');
     
     DECLARE @BangId INT = SCOPE_IDENTITY();
     
-    -- T?o c·c c?t m?c ??nh
-    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'C?n l‡m', 0, 1);
-    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'?ang l‡m', 1, 1);
-    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'?„ xong', 2, 1);
+    -- T?o c√°c c?t m?c ??nh
+    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'C·∫ßn l√†m', 0, 1);
+    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'ƒêang l√†m', 1, 1);
+    INSERT INTO Cot (MaBang, TenCot, ThuTu, KichHoat) VALUES (@BangId, N'ƒê√£ xong', 2, 1);
     
-    -- T?o nh„n m?u
-    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'G?p', '#eb5a46');
-    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'Quan tr?ng', '#f2d600');
-    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'BÏnh th??ng', '#61bd4f');
+    -- T?o nh√£n m?u
+    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'G·∫•p', '#eb5a46');
+    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'Quan tr·ªçng', '#f2d600');
+    INSERT INTO NhanCuaBang (MaBang, TenHienThi, MaMau) VALUES (@BangId, N'B√¨nh th∆∞·ªùng', '#61bd4f');
     
-    PRINT N'?„ t?o d? li?u m?u';
+    PRINT N'ƒê√£ t·∫°o d·ªØ li·ªáu m·∫´u';
 END
 GO
 
--- ============================================
--- HO¿N T?T
--- ============================================
-PRINT N'';
-PRINT N'========================================';
-PRINT N'T?O DATABASE TH¿NH C‘NG!';
-PRINT N'========================================';
-PRINT N'Database: QL_DUANCANHAN_LITE';
-PRINT N'S? b?ng: 10';
-PRINT N'========================================';
-GO
+

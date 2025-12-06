@@ -260,6 +260,9 @@
     <Content Include="Views\Board\Details.cshtml" />
     <Content Include="Views\Member\Index.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />
+    <Content Include="WebApplication1\Database\FixDatabaseErrors.sql" />
+    <Content Include="WebApplication1\Database\README.md" />
+    <Content Include="WebApplication1\SETUP_GUIDE.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

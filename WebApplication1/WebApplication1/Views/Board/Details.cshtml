@@ -92,10 +92,15 @@
 
         .kanban-card .card-title {
             display: -webkit-box;
-            -webkit-line-clamp: 5;
+            -webkit-line-clamp: 3; /* Giới hạn 3 dòng */
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
+            /* Cho phép xuống dòng với từ dài, tránh tràn ra ngoài */
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            hyphens: auto;
+            white-space: normal;
         }
 
     .ui-state-highlight {
@@ -1241,7 +1246,7 @@
 
             $("#btnSaveCard").click(function () {
                 if (!canEdit) {
-                    alert("Bạn không có quyền chỉnh sửa!");
+                    alert("Bạn não có quyền chỉnh sửa!");
                     return;
                 }
 
