@@ -33,6 +33,38 @@
         padding: 10px 15px;
         font-weight: bold;
         cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    /* Style cho tiêu đề bảng có thể edit */
+    .board-title {
+        color: white;
+        text-shadow: 1px 1px 2px #000;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background 0.2s;
+        display: inline-block;
+        min-width: 200px;
+    }
+
+    .board-title:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    .board-title-input {
+        background: rgba(255,255,255,0.9);
+        border: 2px solid #0079bf;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #172b4d;
+        min-width: 200px;
+        outline: none;
     }
 
     .card-list {
@@ -114,6 +146,36 @@
         border-color: #dc3545;
     }
 
+    .column-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .column-badge {
+        display: inline-block;
+        background: #6c757d;
+        color: #fff;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 12px;
+        line-height: 20px;
+    }
+
+    .column-action-btn {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #6c757d;
+        color: #fff;
+        border-radius: 4px; /* hình vuông bo nhẹ giống badge */
+        border: none;
+        cursor: pointer;
+        padding: 0;
+    }
+
     /* Style cho comment section */
     .comment-item {
         background: #f8f9fa;
@@ -182,11 +244,20 @@
         padding: 20px;
         font-style: italic;
     }
+    .column-action-btn:hover { background: #dc3545; }
 </style>
 
 <div class="container-fluid mb-3">
     <div class="d-flex justify-content-between align-items-center">
-        <h3 class="text-white" style="text-shadow: 1px 1px 2px #000;">@Model.TenBang</h3>
+        @if (canEdit)
+        {
+            <h3 id="boardTitleDisplay" class="board-title m-0">@Model.TenBang</h3>
+            <input type="text" id="boardTitleInput" class="board-title-input" value="@Model.TenBang" style="display:none;" />
+        }
+        else
+        {
+            <h3 class="text-white m-0" style="text-shadow: 1px 1px 2px #000;">@Model.TenBang</h3>
+        }
         <div>
             @if (userRole == "owner")
             {
@@ -221,7 +292,14 @@
             {
                 <div class="board-column" data-column-id="@cot.MaCot">
                     <div class="column-header">
-                        @cot.TenCot <span class="badge badge-secondary float-right">@cot.Thes.Count</span>
+                        <span>@cot.TenCot</span>
+                        <span class="column-actions">
+                            <span class="column-badge">@cot.Thes.Count</span>
+                            @if (canEdit)
+                            {
+                                <button class="column-action-btn btn-delete-column" data-column-id="@cot.MaCot" title="Xóa danh sách"><i class="fa fa-trash"></i></button>
+                            }
+                        </span>
                     </div>
 
                     <div class="card-list" id="col-@cot.MaCot">
@@ -346,6 +424,59 @@
 
         $(document).ready(function () {
 
+            // 0. ĐỔI TÊN BẢNG (chỉ cho owner/editor)
+            if (canEdit) {
+                // Click vào tiêu đề => hiện input
+                $("#boardTitleDisplay").click(function(){
+                    $(this).hide();
+                    $("#boardTitleInput").show().focus().select();
+                });
+
+                // Nhấn Enter hoặc blur => lưu tên mới
+                $("#boardTitleInput").on('blur keypress', function(e){
+                    if (e.type === 'blur' || (e.type === 'keypress' && e.which === 13)) {
+                        e.preventDefault();
+                        var newName = $(this).val().trim();
+                        
+                        if (!newName) {
+                            alert("Tên bảng không được rỗng!");
+                            $(this).val($("#boardTitleDisplay").text().trim());
+                            return;
+                        }
+
+                        // Gọi API đổi tên
+                        $.post('/Board/UpdateBoardName', { maBang: maBang, tenMoi: newName })
+                            .done(function(response){
+                                if (response && response.success) {
+                                    $("#boardTitleDisplay").text(response.tenMoi);
+                                    $("#boardTitleInput").val(response.tenMoi).hide();
+                                    $("#boardTitleDisplay").show();
+                                    document.title = response.tenMoi; // Cập nhật title trang
+                                } else {
+                                    alert(response.message || "Không thể đổi tên bảng");
+                                }
+                            })
+                            .fail(function(){
+                                alert("Lỗi khi đổi tên bảng");
+                            });
+                    }
+                });
+
+                // ESC => hủy
+                $("#boardTitleInput").keyup(function(e){
+                    if (e.which === 27) { // ESC
+                        $(this).val($("#boardTitleDisplay").text().trim()).hide();
+                        $("#boardTitleDisplay").show();
+                    }
+                });
+            }
+
+            // Helper: Cập nhật badge số thẻ của cột
+            function updateColumnBadge(columnId) {
+                var count = $("#col-" + columnId + " .kanban-card").length;
+                $('[data-column-id="' + columnId + '"] .column-badge').text(count);
+            }
+
             // 1. KÉO THẢ THẺ
             if (canEdit) {
                 $(".card-list").sortable({
@@ -354,6 +485,12 @@
                         var item = ui.item;
                         var newColumnId = item.closest(".card-list").attr("id").replace("col-", "");
                         var sortedIds = item.closest(".card-list").sortable("toArray", { attribute: "data-id" });
+                        
+                        // Cập nhật badge cột nguồn và cột đích
+                        var oldColumnId = $(event.target).attr("id").replace("col-", "");
+                        updateColumnBadge(oldColumnId);
+                        updateColumnBadge(newColumnId);
+                        
                         $.ajax({
                             url: '/Board/MoveCard', type: 'POST', traditional: true,
                             data: { maThe: item.attr("data-id"), maCotMoi: newColumnId, cardIds: sortedIds }
@@ -367,16 +504,45 @@
                     stop: function (event, ui) {
                         var sortedIds = $(this).sortable("toArray", { attribute: "data-column-id" });
                         $.ajax({ url: '/Board/UpdateColumnPosition', type: 'POST', traditional: true, data: { columnIds: sortedIds } });
-                    }
+                    },
+                    cancel: ".btn-delete-column"
                 });
             }
+
+            // Ngăn việc bắt sự kiện kéo khi click nút xóa
+            $(document).on('mousedown', '.btn-delete-column', function(e){ e.stopPropagation(); });
+            $(document).on('click', '.btn-delete-column', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                if (!canEdit) return;
+                var colId = $(this).data('column-id');
+                if (confirm('Xóa danh sách này cùng tất cả thẻ bên trong?')) {
+                    $.post('/Board/DeleteColumn', { maCot: colId })
+                        .done(function(r){
+                            if (r && r.success) {
+                                $('[data-column-id="' + colId + '"]').remove();
+                            } else {
+                                alert(r.message || 'Không thể xóa danh sách');
+                            }
+                        })
+                        .fail(function(xhr){
+                            alert('Lỗi xóa danh sách: ' + (xhr.responseText || 'Unknown'));
+                        });
+                }
+            });
 
             // 2. THÊM THẺ MỚI
             $(".add-card-btn").click(function () {
                 if (!canEdit) return;
                 var colId = $(this).data("column-id");
                 var title = prompt("Nhập nội dung:");
-                if (title) $.post('/Board/CreateCard', { maCot: colId, noiDung: title }, function(r) { if(r.success) location.reload(); });
+                if (title) {
+                    $.post('/Board/CreateCard', { maCot: colId, noiDung: title }, function(r) { 
+                        if(r.success) {
+                            location.reload(); // Reload để hiện thẻ mới và cập nhật badge
+                        }
+                    });
+                }
             });
 
             // 3. THÊM CỘT MỚI
@@ -691,10 +857,70 @@
 
             $("#btnDeleteCard").click(function () {
                 if (!canEdit) return;
+                var cardId = $("#modalCardId").val();
                 if (confirm("Xóa thẻ này?")) {
-                    $.post("/Board/DeleteCard", { id: $("#modalCardId").val() }, function (r) {
-                        if (r.success) { $("#card_" + $("#modalCardId").val()).remove(); $("#cardModal").modal("hide"); }
+                    $.post("/Board/DeleteCard", { id: cardId }, function (r) {
+                        if (r.success) {
+                            var card = $("#card_" + cardId);
+                            var columnId = card.closest(".card-list").attr("id").replace("col-", "");
+                            
+                            // Xóa thẻ khỏi DOM
+                            card.remove();
+                            
+                            // Cập nhật badge
+                            updateColumnBadge(columnId);
+                            
+                            // Đóng modal
+                            $("#cardModal").modal("hide");
+                        }
                     });
+                }
+            });
+
+            // 6. EDIT BẢNG TÊN (NHƯ TREllo)
+            var originalBoardName = "@Model.TenBang";
+            var isEditingTitle = false;
+
+            function setBoardTitleEditable(editable) {
+                isEditingTitle = editable;
+                var titleElement = $("#boardTitleElement");
+                var inputElement = $("#boardTitleInput");
+
+                if (editable) {
+                    titleElement.hide();
+                    inputElement.val(originalBoardName).show().focus();
+                } else {
+                    titleElement.show();
+                    inputElement.hide();
+                }
+            }
+
+            $("#boardTitleElement").click(function() {
+                if (!canEdit) return;
+                setBoardTitleEditable(true);
+            });
+
+            $("#boardTitleInput").on("blur keypress", function(e) {
+                if (e.type === "blur" || e.which === 13) { // Enter key or blur event
+                    var newTitle = $(this).val().trim();
+                    if (newTitle && newTitle != originalBoardName) {
+                        $.post("/Board/UpdateBoardName", { maBang: maBang, tenBang: newTitle }, function(response) {
+                            if (response.success) {
+                                originalBoardName = newTitle;
+                                $("#boardTitleElement").text(newTitle);
+                                setBoardTitleEditable(false);
+                            }
+                        });
+                    } else {
+                        setBoardTitleEditable(false);
+                    }
+                }
+            });
+
+            // ESC để hủy chỉnh sửa tên bảng
+            $(document).keyup(function(e) {
+                if (e.which === 27) { // ESC key
+                    setBoardTitleEditable(false);
                 }
             });
         });

@@ -41,6 +41,121 @@
                     color: white !important;
                 }
 
+        /* Thanh tìm kiếm */
+        .navbar-search {
+            position: relative;
+            max-width: 300px;
+            width: 300px;
+        }
+
+        .navbar-search-input {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px 6px 36px;
+            color: white;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .navbar-search-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .navbar-search-input:focus {
+            background: white;
+            color: #172b4d;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .navbar-search-input:focus::placeholder {
+            color: #a5adba;
+        }
+
+        .navbar-search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.7);
+            pointer-events: none;
+        }
+
+        .navbar-search-input:focus + .navbar-search-icon {
+            color: #5e6c84;
+        }
+
+        /* Dropdown kết quả tìm kiếm */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #172b4d;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: #f4f5f7;
+        }
+
+        .search-result-color {
+            width: 40px;
+            height: 32px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .search-result-info {
+            flex-grow: 1;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .search-result-type {
+            font-size: 12px;
+            color: #5e6c84;
+            margin: 0;
+        }
+
+        .search-no-results {
+            padding: 20px;
+            text-align: center;
+            color: #5e6c84;
+            font-size: 14px;
+        }
+
         .btn-create-board-nav {
             background-color: rgba(255,255,255,0.25);
             color: white;
@@ -196,12 +311,33 @@
                         </button>
                     </li>
                 }
+                else if (currentController == "Home" && currentAction == "Index" && User.Identity.IsAuthenticated)
+                {
+                    <li class="nav-item ml-2">
+                        <button class="btn btn-sm btn-create-board-nav py-1 px-2 mt-1" data-toggle="modal" data-target="#createBoardModal">
+                            <i class="fa fa-plus"></i> Tạo mới
+                        </button>
+                    </li>
+                }
             </ul>
 
             <ul class="navbar-nav ml-auto align-items-center">
                 @if (User.Identity.IsAuthenticated)
                 {
-                    <li class="nav-item mr-3">
+                    <!-- Thanh tìm kiếm -->
+                    <li class="nav-item">
+                        <div class="navbar-search">
+                            <i class="fa fa-search navbar-search-icon"></i>
+                            <input type="text" 
+                                   id="navbarSearchInput" 
+                                   class="navbar-search-input" 
+                                   placeholder="Tìm kiếm bảng..."
+                                   autocomplete="off">
+                            <div id="searchResults" class="search-results"></div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item mr-3 ml-3">
                         <span class="text-white small">
                             Xin chào,
                             <strong>@(Session["HoTen"] != null ? Session["HoTen"] : User.Identity.Name)</strong>
@@ -230,6 +366,92 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script>
+        // Xử lý tìm kiếm bảng
+        $(document).ready(function() {
+            var searchTimeout;
+            var $searchInput = $('#navbarSearchInput');
+            var $searchResults = $('#searchResults');
+
+            // Tìm kiếm khi gõ
+            $searchInput.on('input', function() {
+                clearTimeout(searchTimeout);
+                var keyword = $(this).val().trim();
+
+                if (keyword.length === 0) {
+                    $searchResults.removeClass('show').empty();
+                    return;
+                }
+
+                // Debounce: Đợi 300ms sau khi người dùng ngừng gõ
+                searchTimeout = setTimeout(function() {
+                    $.get('/Board/SearchBoards', { keyword: keyword })
+                        .done(function(response) {
+                            if (response && response.success) {
+                                displaySearchResults(response.boards);
+                            }
+                        })
+                        .fail(function() {
+                            console.error('Lỗi tìm kiếm');
+                        });
+                }, 300);
+            });
+
+            // Hiển thị kết quả
+            function displaySearchResults(boards) {
+                $searchResults.empty();
+
+                if (boards.length === 0) {
+                    $searchResults.html('<div class="search-no-results">Không tìm thấy bảng nào</div>');
+                    $searchResults.addClass('show');
+                    return;
+                }
+
+                boards.forEach(function(board) {
+                    var typeLabel = board.isOwner ? 'Bảng của tôi' : 'Bảng được chia sẻ';
+                    var html = 
+                        '<a href="/Board/Details/' + board.maBang + '" class="search-result-item">' +
+                        '  <div class="search-result-color" style="background-color: ' + board.mauNen + '"></div>' +
+                        '  <div class="search-result-info">' +
+                        '    <p class="search-result-name">' + escapeHtml(board.tenBang) + '</p>' +
+                        '    <p class="search-result-type">' + typeLabel + '</p>' +
+                        '  </div>' +
+                        '</a>';
+                    $searchResults.append(html);
+                });
+
+                $searchResults.addClass('show');
+            }
+
+            // Escape HTML để tránh XSS
+            function escapeHtml(text) {
+                var map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            // Đóng dropdown khi click bên ngoài
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.navbar-search').length) {
+                    $searchResults.removeClass('show');
+                }
+            });
+
+            // Focus vào search khi nhấn Ctrl+K hoặc Cmd+K
+            $(document).keydown(function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    $searchInput.focus();
+                }
+            });
+        });
+    </script>
 
     @RenderSection("scripts", required: false)
 

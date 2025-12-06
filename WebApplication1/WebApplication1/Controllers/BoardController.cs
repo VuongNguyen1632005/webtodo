@@ -522,6 +522,187 @@ namespace WebApplication1.Controllers
             }
         }
 
+        // 8a. Xóa cột cùng các thẻ bên trong
+        [HttpPost]
+        public JsonResult DeleteColumn(int maCot)
+        {
+            try
+            {
+                var cot = db.Cots.Find(maCot);
+                if (cot == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy cột" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(cot.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                // Xóa các thẻ thuộc cột
+                var cards = db.Thes.Where(t => t.MaCot == maCot).ToList();
+                foreach (var card in cards)
+                {
+                    // Xóa ghi chú của thẻ
+                    var notes = db.GhiChus.Where(g => g.MaThe == card.MaThe).ToList();
+                    db.GhiChus.RemoveRange(notes);
+                    
+                    // Xóa thẻ
+                    db.Thes.Remove(card);
+                }
+
+                // Xóa cột
+                db.Cots.Remove(cot);
+                db.SaveChanges();
+                
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Không thể xóa cột: " + ex.Message });
+            }
+        }
+
+        // 8b. Đổi tên bảng
+        [HttpPost]
+        public JsonResult UpdateBoardName(int maBang, string tenMoi)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tenMoi))
+                {
+                    return Json(new { success = false, message = "Tên bảng không được rỗng" });
+                }
+
+                var bang = db.Bangs.Find(maBang);
+                if (bang == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy bảng" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(maBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                bang.TenBang = tenMoi.Trim();
+                db.SaveChanges();
+
+                return Json(new { success = true, tenMoi = bang.TenBang });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Không thể đổi tên bảng: " + ex.Message });
+            }
+        }
+
+        // 8c. Tìm kiếm bảng
+        [HttpGet]
+        public JsonResult SearchBoards(string keyword)
+        {
+            try
+            {
+                int userId = GetCurrentUserId();
+                if (userId == -1)
+                {
+                    return Json(new { success = false, message = "Chưa đăng nhập" }, JsonRequestBehavior.AllowGet);
+                }
+
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    return Json(new { success = true, boards = new List<object>() }, JsonRequestBehavior.AllowGet);
+                }
+
+                keyword = keyword.Trim().ToLower();
+
+                // Tìm bảng của tôi
+                var myBoards = db.Bangs
+                    .Where(b => b.MaNguoiSoHuu == userId && b.TenBang.ToLower().Contains(keyword))
+                    .Select(b => new
+                    {
+                        maBang = b.MaBang,
+                        tenBang = b.TenBang,
+                        mauNen = b.MauNen ?? "#0079bf",
+                        isOwner = true
+                    })
+                    .Take(5)
+                    .ToList();
+
+                // Tìm bảng được chia sẻ
+                var sharedBoards = db.ThanhVienBangs
+                    .Where(tv => tv.MaTaiKhoan == userId && tv.Bang.TenBang.ToLower().Contains(keyword))
+                    .Select(tv => new
+                    {
+                        maBang = tv.MaBang,
+                        tenBang = tv.Bang.TenBang,
+                        mauNen = tv.Bang.MauNen ?? "#0079bf",
+                        isOwner = false
+                    })
+                    .Take(5)
+                    .ToList();
+
+                var allBoards = myBoards.Concat(sharedBoards).ToList();
+
+                return Json(new { success = true, boards = allBoards }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // 8d. Xóa bảng
+        [HttpPost]
+        public JsonResult DeleteBoard(int maBang)
+        {
+            try
+            {
+                var bang = db.Bangs.Find(maBang);
+                if (bang == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy bảng" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanManage(maBang, userId))
+                {
+                    return Json(new { success = false, message = "Chỉ chủ sở hữu mới có thể xóa bảng" });
+                }
+
+                // Xóa tất cả thành viên
+                var members = db.ThanhVienBangs.Where(tv => tv.MaBang == maBang).ToList();
+                db.ThanhVienBangs.RemoveRange(members);
+
+                // Xóa tất cả cột và thẻ
+                var columns = db.Cots.Where(c => c.MaBang == maBang).ToList();
+                foreach (var col in columns)
+                {
+                    var cards = db.Thes.Where(t => t.MaCot == col.MaCot).ToList();
+                    foreach (var card in cards)
+                    {
+                        // Xóa comments của thẻ
+                        var comments = db.GhiChus.Where(g => g.MaThe == card.MaThe).ToList();
+                        db.GhiChus.RemoveRange(comments);
+                        
+                        db.Thes.Remove(card);
+                    }
+                    db.Cots.Remove(col);
+                }
+
+                // Xóa bảng
+                db.Bangs.Remove(bang);
+                db.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Không thể xóa bảng: " + ex.Message });
+            }
+        }
+
         // 9. Cập nhật trạng thái Hoàn thành (Checkbox)
         [HttpPost]
         public JsonResult UpdateCardCompletion(int id, bool status)

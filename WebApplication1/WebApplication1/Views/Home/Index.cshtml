@@ -24,17 +24,53 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
+    /* Board card container */
+    .board-card-wrapper {
+        position: relative;
+        height: 100%;
+    }
+
+    .board-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Nút xóa board (ẩn mặc định) */
+    .board-delete-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .board-delete-btn:hover {
+        background: #dc3545;
+        transform: scale(1.1);
+    }
+
+    .board-card-wrapper:hover .board-delete-btn {
+        opacity: 1;
+    }
 </style>
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="mb-4">
         <h2 class="text-dark font-weight-bold" style="font-size: 1.5rem;">
             <i class="fa fa-user-circle mr-2"></i> Các Bảng Của Tôi
         </h2>
-
-        <button class="btn btn-main-trello shadow-sm" data-toggle="modal" data-target="#createBoardModal">
-            <i class="fa fa-plus"></i> Tạo bảng mới
-        </button>
     </div>
 
     <div class="row">
@@ -43,12 +79,17 @@
             foreach (var bang in bangCuaToi)
             {
                 <div class="col-md-3 mb-4">
-                    <a href="/Board/Details/@bang.MaBang" class="card text-white text-decoration-none shadow-sm h-100 border-0"
-                       style="background-color: @(bang.MauNen ?? "#0079bf"); min-height: 120px; transition: transform 0.2s;">
-                        <div class="card-body">
-                            <h5 class="card-title font-weight-bold text-truncate">@bang.TenBang</h5>
-                        </div>
-                    </a>
+                    <div class="board-card-wrapper">
+                        <a href="/Board/Details/@bang.MaBang" class="card board-card text-white text-decoration-none shadow-sm h-100 border-0"
+                           style="background-color: @(bang.MauNen ?? "#0079bf"); min-height: 120px; transition: transform 0.2s;">
+                            <div class="card-body">
+                                <h5 class="card-title font-weight-bold text-truncate">@bang.TenBang</h5>
+                            </div>
+                        </a>
+                        <button class="board-delete-btn" data-board-id="@bang.MaBang" data-board-name="@bang.TenBang" title="Xóa bảng">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             }
         }
@@ -91,7 +132,7 @@
 </div>
 
 <script>
-    document.querySelectorAll('.card').forEach(card => {
+    document.querySelectorAll('.board-card').forEach(card => {
         card.addEventListener('mouseenter', () => {
             card.style.transform = 'translateY(-5px)';
             card.style.filter = 'brightness(1.1)';
@@ -99,6 +140,60 @@
         card.addEventListener('mouseleave', () => {
             card.style.transform = 'translateY(0)';
             card.style.filter = 'brightness(1)';
+        });
+    });
+
+    // Xử lý xóa bảng
+    document.querySelectorAll('.board-delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var boardId = this.getAttribute('data-board-id');
+            var boardName = this.getAttribute('data-board-name');
+            
+            if (confirm('Bạn có chắc muốn xóa bảng "' + boardName + '"?\n\nMọi dữ liệu bao gồm cột, thẻ, và nhận xét sẽ bị xóa vĩnh viễn!')) {
+                // Disable button
+                this.disabled = true;
+                this.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+                
+                fetch('/Board/DeleteBoard', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'maBang=' + boardId
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Xóa card khỏi DOM với animation
+                        var wrapper = this.closest('.col-md-3');
+                        wrapper.style.transition = 'all 0.3s';
+                        wrapper.style.opacity = '0';
+                        wrapper.style.transform = 'scale(0.8)';
+                        
+                        setTimeout(() => {
+                            wrapper.remove();
+                            
+                            // Check nếu không còn bảng nào
+                            var boardsContainer = document.querySelector('.row');
+                            if (boardsContainer.querySelectorAll('.board-card-wrapper').length === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    } else {
+                        alert(data.message || 'Không thể xóa bảng');
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fa fa-trash"></i>';
+                    }
+                })
+                .catch(error => {
+                    alert('Lỗi khi xóa bảng: ' + error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fa fa-trash"></i>';
+                });
+            }
         });
     });
 </script>
