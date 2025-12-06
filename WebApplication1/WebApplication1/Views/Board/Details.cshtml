@@ -113,6 +113,75 @@
         background-color: rgba(220, 53, 69, 0.8);
         border-color: #dc3545;
     }
+
+    /* Style cho comment section */
+    .comment-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .comment-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: @themeColor;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+
+    .comment-author {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .comment-time {
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    .comment-content {
+        padding-left: 40px;
+        font-size: 14px;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .comment-delete {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .comment-item:hover .comment-delete {
+        opacity: 1;
+    }
+
+    .no-comments {
+        text-align: center;
+        color: #6c757d;
+        padding: 20px;
+        font-style: italic;
+    }
 </style>
 
 <div class="container-fluid mb-3">
@@ -205,30 +274,65 @@
 </div>
 
 <div class="modal fade" id="cardModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 90%;">
         <div class="modal-content">
             <div class="modal-header" style="border-bottom: none;">
                 <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ..." @(!canEdit ? "readonly" : "")>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="modalCardId">
                 <div class="row">
-                    <div class="col-md-8">
+                    <!-- Cột trái: Mô tả và Hạn chót -->
+                    <div class="col-md-7">
                         <div class="form-group">
-                            <label class="font-weight-bold">Mô tả</label>
+                            <label class="font-weight-bold"><i class="fa fa-align-left"></i> Mô tả</label>
                             <textarea id="modalCardDesc" class="form-control" rows="5" placeholder="Thêm mô tả chi tiết..." @(!canEdit ? "readonly" : "")></textarea>
                         </div>
                         <div class="form-group mt-3">
-                            <label class="font-weight-bold">📅 Hạn chót</label>
+                            <label class="font-weight-bold"><i class="fa fa-calendar"></i> Hạn chót</label>
                             <input type="date" id="modalCardDeadline" class="form-control" @(!canEdit ? "readonly" : "")>
                         </div>
                         @if (canEdit)
-                        {<button type="button" class="btn btn-success mt-2" id="btnSaveCard">Lưu thay đổi</button>}
+                        {
+                            <button type="button" class="btn btn-success mt-2" id="btnSaveCard">
+                                <i class="fa fa-save"></i> Lưu thay đổi
+                            </button>
+                            <button class="btn btn-danger mt-2" id="btnDeleteCard">
+                                <i class="fa fa-trash"></i> Xóa thẻ
+                            </button>
+                        }
                     </div>
-                    <div class="col-md-4">
-                        @if (canEdit)
-                        {<button class="btn btn-danger btn-block" id="btnDeleteCard">Xóa thẻ</button>}
+                    
+                    <!-- Cột phải: Nhận xét và hoạt động -->
+                    <div class="col-md-5" style="border-left: 1px solid #e0e0e0;">
+                        <div class="comment-section">
+                            <h5 class="font-weight-bold mb-3">
+                                <i class="fa fa-comments"></i> Nhận xét và hoạt động
+                            </h5>
+                            
+                            <!-- Hiển thị chi tiết (collapse toggle) -->
+                            <div class="mb-3">
+                                <button class="btn btn-sm btn-outline-secondary btn-block" type="button" data-toggle="collapse" data-target="#detailsSection">
+                                    Hiển chi tiết
+                                </button>
+                            </div>
+
+                            <!-- Form nhập comment -->
+                            <div class="mb-3">
+                                <textarea id="commentInput" class="form-control" rows="3" placeholder="Viết bình luận..."></textarea>
+                                <button type="button" class="btn btn-primary btn-sm mt-2" id="btnAddComment">
+                                    <i class="fa fa-paper-plane"></i> Gửi
+                                </button>
+                            </div>
+
+                            <!-- Danh sách comment -->
+                            <div id="commentsList" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Comments sẽ được load bằng JS -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -310,20 +414,230 @@
                 var id = $(this).data("id");
                 $.get("/Board/GetCardDetails/" + id, function (data) {
                     if (data && data.success) {
-                        $("#modalCardId").val(data.id); $("#modalCardTitle").val(data.title);
-                        $("#modalCardDesc").val(data.desc); $("#modalCardDeadline").val(data.deadline);
+                        $("#modalCardId").val(data.id); 
+                        $("#modalCardTitle").val(data.title);
+                        $("#modalCardDesc").val(data.desc); 
+                        $("#modalCardDeadline").val(data.deadline);
+                        $("#commentInput").val(""); // Clear comment input
+                        loadComments(data.id); // Load comments
                         $("#cardModal").modal("show");
                     }
                 });
             });
 
-            $("#btnSaveCard").click(function () {
-                if (!canEdit) return;
-                $.post("/Board/UpdateCardDetails", {
-                    id: $("#modalCardId").val(), title: $("#modalCardTitle").val(),
-                    desc: $("#modalCardDesc").val(), deadline: $("#modalCardDeadline").val()
-                }, function (r) { if(r.success) location.reload(); });
+            // 5a. Load comments
+            function loadComments(cardId) {
+                $.get("/Board/GetCardComments?maThe=" + cardId, function(response) {
+                    if (response && response.success) {
+                        var html = '';
+                        if (response.comments && response.comments.length > 0) {
+                            response.comments.forEach(function(comment) {
+                                var initials = getInitials(comment.userName);
+                                var timeStr = formatDateTime(comment.createdAt);
+                                
+                                html += '<div class="comment-item" data-comment-id="' + comment.id + '">';
+                                html += '  <div class="comment-header">';
+                                html += '    <div>';
+                                html += '      <span class="comment-avatar">' + initials + '</span>';
+                                html += '      <span class="comment-author">' + escapeHtml(comment.userName) + '</span>';
+                                html += '    </div>';
+                                if (canEdit) {
+                                    html += '    <button class="comment-delete" onclick="deleteComment(' + comment.id + ')"><i class="fa fa-times"></i></button>';
+                                }
+                                html += '  </div>';
+                                html += '  <div class="comment-time">' + timeStr + '</div>';
+                                html += '  <div class="comment-content">' + escapeHtml(comment.content).replace(/\n/g, '<br>') + '</div>';
+                                html += '</div>';
+                            });
+                        } else {
+                            html = '<div class="no-comments">Chưa có bình luận nào</div>';
+                        }
+                        $("#commentsList").html(html);
+                    }
+                });
+            }
+
+            // 5b. Add comment
+            $("#btnAddComment").click(function() {
+                var content = $("#commentInput").val().trim();
+                var cardId = $("#modalCardId").val();
+                
+                if (!content) {
+                    alert("Vui lòng nhập nội dung bình luận!");
+                    return;
+                }
+
+                $.post("/Board/AddCardComment", {
+                    maThe: cardId,
+                    content: content
+                }, function(response) {
+                    if (response && response.success) {
+                        $("#commentInput").val("");
+                        loadComments(cardId);
+                    } else {
+                        alert(response.message || "Không thể thêm bình luận!");
+                    }
+                });
             });
+
+            // 5c. Delete comment
+            window.deleteComment = function(commentId) {
+                if (!confirm("Xóa bình luận này?")) return;
+                
+                $.post("/Board/DeleteCardComment", { id: commentId }, function(response) {
+                    if (response && response.success) {
+                        var cardId = $("#modalCardId").val();
+                        loadComments(cardId);
+                    } else {
+                        alert(response.message || "Không thể xóa bình luận!");
+                    }
+                });
+            };
+
+            // Helper functions
+            function getInitials(name) {
+                if (!name) return "?";
+                var parts = name.trim().split(" ");
+                if (parts.length >= 2) {
+                    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                }
+                return name.substring(0, 2).toUpperCase();
+            }
+
+            function formatDateTime(dateStr) {
+                if (!dateStr) return "";
+                var date = new Date(dateStr);
+                var now = new Date();
+                var diffMs = now - date;
+                var diffMins = Math.floor(diffMs / 60000);
+                var diffHours = Math.floor(diffMs / 3600000);
+                var diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) return "Vừa xong";
+                if (diffMins < 60) return diffMins + " phút trước";
+                if (diffHours < 24) return diffHours + " giờ trước";
+                if (diffDays < 7) return diffDays + " ngày trước";
+                
+                var day = ("0" + date.getDate()).slice(-2);
+                var month = ("0" + (date.getMonth() + 1)).slice(-2);
+                var year = date.getFullYear();
+                var hours = ("0" + date.getHours()).slice(-2);
+                var minutes = ("0" + date.getMinutes()).slice(-2);
+                
+                return hours + ":" + minutes + " " + day + "/" + month + "/" + year;
+            }
+
+            function escapeHtml(text) {
+                if (!text) return "";
+                var map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            // Enter để gửi comment
+            $("#commentInput").keypress(function(e) {
+                if (e.which == 13 && !e.shiftKey) {
+                    e.preventDefault();
+                    $("#btnAddComment").click();
+                }
+            });
+
+            $("#btnSaveCard").click(function () {
+                if (!canEdit) {
+                    alert("Bạn không có quyền chỉnh sửa!");
+                    return;
+                }
+
+                var cardId = $("#modalCardId").val();
+                var title = $("#modalCardTitle").val().trim();
+                var desc = $("#modalCardDesc").val().trim();
+                var deadline = $("#modalCardDeadline").val();
+
+                // Validate
+                if (!title) {
+                    alert("Vui lòng nhập tiêu đề thẻ!");
+                    $("#modalCardTitle").focus();
+                    return;
+                }
+
+                // Disable button và hiển thị loading
+                var btn = $(this);
+                var originalText = btn.html();
+                btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Đang lưu...');
+
+                $.post("/Board/UpdateCardDetails", {
+                    id: cardId,
+                    title: title,
+                    desc: desc,
+                    deadline: deadline
+                }, function (response) {
+                    if (response && response.success) {
+                        // Cập nhật UI ngay không cần reload
+                        var card = $("#card_" + cardId);
+                        card.find(".card-title").text(title);
+                        
+                        // Cập nhật icon mô tả
+                        if (desc) {
+                            if (card.find(".card-desc-icon").length === 0) {
+                                card.find(".card-infos").prepend('<div class="card-desc-icon small text-muted"><i class="fa fa-align-left"></i></div>');
+                            }
+                        } else {
+                            card.find(".card-desc-icon").remove();
+                        }
+
+                        // Cập nhật deadline
+                        if (deadline) {
+                            var parts = deadline.split("-");
+                            var displayDate = parts[2] + "/" + parts[1];
+                            if (card.find(".card-deadline").length === 0) {
+                                card.find(".card-infos").append('<div class="card-deadline small"><i class="fa fa-clock-o"></i> <span class="text-muted">' + displayDate + '</span></div>');
+                            } else {
+                                card.find(".card-deadline span").text(displayDate);
+                            }
+                        } else {
+                            card.find(".card-deadline").remove();
+                        }
+
+                        // Đóng modal
+                        $("#cardModal").modal("hide");
+                        
+                        // Thông báo thành công
+                        showNotification("Đã lưu thay đổi!", "success");
+                    } else {
+                        alert(response.message || "Không thể lưu thay đổi!");
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error("Error:", error);
+                    alert("Lỗi khi lưu: " + error);
+                })
+                .always(function() {
+                    // Restore button
+                    btn.prop("disabled", false).html(originalText);
+                });
+            });
+
+            // Notification helper
+            function showNotification(message, type) {
+                var alertClass = type === "success" ? "alert-success" : "alert-danger";
+                var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+                    '<strong>' + message + '</strong>' +
+                    '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+                    '</div>');
+                
+                $("body").append(notification);
+                
+                setTimeout(function() {
+                    notification.fadeOut(function() {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
 
             $("#btnDeleteCard").click(function () {
                 if (!canEdit) return;
