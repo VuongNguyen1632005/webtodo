@@ -871,5 +871,318 @@ namespace WebApplication1.Controllers
             catch { }
             return Json(new { success = false });
         }
+
+        #region API Quản lý Nhãn (Labels)
+
+        // 13. Lấy danh sách nhãn của bảng
+        [HttpGet]
+        public JsonResult GetBoardLabels(int maBang)
+        {
+            try
+            {
+                var labels = db.NhanCuaBangs
+                    .Where(n => n.MaBang == maBang)
+                    .Select(n => new
+                    {
+                        maNhan = n.MaNhanCuaBang,
+                        tenHienThi = n.TenHienThi,
+                        maMau = n.MaMau
+                    })
+                    .ToList();
+
+                return Json(new { success = true, labels = labels }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // 14. Tạo nhãn mới cho bảng
+        [HttpPost]
+        public JsonResult CreateLabel(int maBang, string tenHienThi, string maMau)
+        {
+            try
+            {
+                int userId = GetCurrentUserId();
+                if (!CanEdit(maBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                var nhan = new NhanCuaBang
+                {
+                    MaBang = maBang,
+                    TenHienThi = tenHienThi,
+                    MaMau = maMau
+                };
+
+                db.NhanCuaBangs.Add(nhan);
+                db.SaveChanges();
+
+                return Json(new { success = true, maNhan = nhan.MaNhanCuaBang });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // 15. Xóa nhãn
+        [HttpPost]
+        public JsonResult DeleteLabel(int maNhan)
+        {
+            try
+            {
+                var nhan = db.NhanCuaBangs.Find(maNhan);
+                if (nhan == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy nhãn" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(nhan.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                // Xóa các liên kết nhãn-thẻ trước
+                var nhanCuaThes = db.NhanCuaThes.Where(n => n.MaNhanCuaBang == maNhan).ToList();
+                db.NhanCuaThes.RemoveRange(nhanCuaThes);
+
+                // Xóa nhãn
+                db.NhanCuaBangs.Remove(nhan);
+                db.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // 16. Lấy danh sách nhãn của thẻ
+        [HttpGet]
+        public JsonResult GetCardLabels(int maThe)
+        {
+            try
+            {
+                var the = db.Thes.Find(maThe);
+                if (the == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thẻ" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var labels = db.NhanCuaThes
+                    .Where(n => n.MaThe == maThe)
+                    .Select(n => new
+                    {
+                        maNhan = n.MaNhanCuaBang,
+                        tenHienThi = n.NhanCuaBang.TenHienThi,
+                        maMau = n.NhanCuaBang.MaMau
+                    })
+                    .ToList();
+
+                return Json(new { success = true, labels = labels }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // 17. Gán/Bỏ nhãn cho thẻ (Toggle)
+        [HttpPost]
+        public JsonResult ToggleCardLabel(int maThe, int maNhan)
+        {
+            try
+            {
+                var the = db.Thes.Find(maThe);
+                if (the == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thẻ" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(the.Cot.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                var existing = db.NhanCuaThes.FirstOrDefault(n => n.MaThe == maThe && n.MaNhanCuaBang == maNhan);
+
+                if (existing != null)
+                {
+                    // Đã có -> Bỏ nhãn
+                    db.NhanCuaThes.Remove(existing);
+                    db.SaveChanges();
+                    return Json(new { success = true, action = "removed" });
+                }
+                else
+                {
+                    // Chưa có -> Gán nhãn
+                    var nhanCuaThe = new NhanCuaThe
+                    {
+                        MaThe = maThe,
+                        MaNhanCuaBang = maNhan
+                    };
+                    db.NhanCuaThes.Add(nhanCuaThe);
+                    db.SaveChanges();
+                    return Json(new { success = true, action = "added" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region API Quản lý Thành viên của Thẻ (Card Members)
+
+        // 18. Lấy danh sách thành viên có thể gán cho thẻ (thành viên của bảng)
+        [HttpGet]
+        public JsonResult GetAvailableMembers(int maBang)
+        {
+            try
+            {
+                var bang = db.Bangs.Find(maBang);
+                if (bang == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy bảng" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var members = new List<object>();
+
+                // Thêm chủ sở hữu
+                members.Add(new
+                {
+                    maTaiKhoan = bang.TaiKhoan.MaTaiKhoan,
+                    hoTen = bang.TaiKhoan.HoTen ?? bang.TaiKhoan.DiaChiEmail.Split('@')[0],
+                    email = bang.TaiKhoan.DiaChiEmail,
+                    anhDaiDien = bang.TaiKhoan.AnhDaiDien
+                });
+
+                // Thêm các thành viên khác
+                var thanhViens = db.ThanhVienBangs
+                    .Where(tv => tv.MaBang == maBang)
+                    .Select(tv => new
+                    {
+                        maTaiKhoan = tv.MaTaiKhoan,
+                        hoTen = tv.TaiKhoan.HoTen ?? "",
+                        email = tv.TaiKhoan.DiaChiEmail,
+                        anhDaiDien = tv.TaiKhoan.AnhDaiDien
+                    })
+                    .ToList()
+                    .Select(tv => new
+                    {
+                        maTaiKhoan = tv.maTaiKhoan,
+                        hoTen = string.IsNullOrEmpty(tv.hoTen) ? tv.email.Split('@')[0] : tv.hoTen,
+                        email = tv.email,
+                        anhDaiDien = tv.anhDaiDien
+                    })
+                    .ToList();
+
+                members.AddRange(thanhViens);
+
+                return Json(new { success = true, members = members }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // 19. Lấy danh sách thành viên đã gán cho thẻ
+        [HttpGet]
+        public JsonResult GetCardMembers(int maThe)
+        {
+            try
+            {
+                var the = db.Thes.Find(maThe);
+                if (the == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thẻ" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var members = db.ThanhVienCuaThes
+                    .Where(tv => tv.MaThe == maThe)
+                    .Select(tv => new
+                    {
+                        maTaiKhoan = tv.MaTaiKhoan,
+                        hoTen = tv.TaiKhoan.HoTen ?? "",
+                        email = tv.TaiKhoan.DiaChiEmail,
+                        anhDaiDien = tv.TaiKhoan.AnhDaiDien,
+                        ngayGan = tv.NgayGan
+                    })
+                    .ToList()
+                    .Select(tv => new
+                    {
+                        maTaiKhoan = tv.maTaiKhoan,
+                        hoTen = string.IsNullOrEmpty(tv.hoTen) ? tv.email.Split('@')[0] : tv.hoTen,
+                        email = tv.email,
+                        anhDaiDien = tv.anhDaiDien,
+                        ngayGan = tv.ngayGan
+                    })
+                    .ToList();
+
+                return Json(new { success = true, members = members }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // 20. Gán/Bỏ thành viên cho thẻ (Toggle)
+        [HttpPost]
+        public JsonResult ToggleCardMember(int maThe, int maTaiKhoan)
+        {
+            try
+            {
+                var the = db.Thes.Find(maThe);
+                if (the == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thẻ" });
+                }
+
+                int userId = GetCurrentUserId();
+                if (!CanEdit(the.Cot.MaBang, userId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này" });
+                }
+
+                var existing = db.ThanhVienCuaThes.FirstOrDefault(tv => tv.MaThe == maThe && tv.MaTaiKhoan == maTaiKhoan);
+
+                if (existing != null)
+                {
+                    // Đã có -> Bỏ thành viên
+                    db.ThanhVienCuaThes.Remove(existing);
+                    db.SaveChanges();
+                    return Json(new { success = true, action = "removed" });
+                }
+                else
+                {
+                    // Chưa có -> Gán thành viên
+                    var thanhVienCuaThe = new ThanhVienCuaThe
+                    {
+                        MaThe = maThe,
+                        MaTaiKhoan = maTaiKhoan,
+                        NgayGan = DateTime.Now
+                    };
+                    db.ThanhVienCuaThes.Add(thanhVienCuaThe);
+                    db.SaveChanges();
+                    return Json(new { success = true, action = "added" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        #endregion
     }
 }

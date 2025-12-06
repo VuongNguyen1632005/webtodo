@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="QL_DUANCANHAN_LITEModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="QL_DUANCANHAN_LITEModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Bang">
           <Key>
             <PropertyRef Name="MaBang" />
@@ -61,6 +61,7 @@
           </Key>
           <Property Name="MaNhanCuaBang" Type="int" Nullable="false" />
           <Property Name="MaThe" Type="int" Nullable="false" />
+          <Property Name="MaNhanCuaThe" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
         </EntityType>
         <EntityType Name="sysdiagrams">
           <Key>
@@ -91,6 +92,15 @@
           <Property Name="MaTaiKhoan" Type="int" Nullable="false" />
           <Property Name="VaiTro" Type="nvarchar" MaxLength="20" />
           <Property Name="NgayThamGia" Type="datetime" />
+        </EntityType>
+        <EntityType Name="ThanhVienCuaThe">
+          <Key>
+            <PropertyRef Name="MaThanhVienCuaThe" />
+          </Key>
+          <Property Name="MaThanhVienCuaThe" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MaThe" Type="int" Nullable="false" />
+          <Property Name="MaTaiKhoan" Type="int" Nullable="false" />
+          <Property Name="NgayGan" Type="datetime" />
         </EntityType>
         <EntityType Name="The">
           <Key>
@@ -186,6 +196,32 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK__ThanhVien__MaTai__14270015">
+          <End Role="TaiKhoan" Type="Self.TaiKhoan" Multiplicity="1" />
+          <End Role="ThanhVienCuaThe" Type="Self.ThanhVienCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="TaiKhoan">
+              <PropertyRef Name="MaTaiKhoan" />
+            </Principal>
+            <Dependent Role="ThanhVienCuaThe">
+              <PropertyRef Name="MaTaiKhoan" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__ThanhVien__MaThe__1332DBDC">
+          <End Role="The" Type="Self.The" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="ThanhVienCuaThe" Type="Self.ThanhVienCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="The">
+              <PropertyRef Name="MaThe" />
+            </Principal>
+            <Dependent Role="ThanhVienCuaThe">
+              <PropertyRef Name="MaThe" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK__The__MaCot__48CFD27E">
           <End Role="Cot" Type="Self.Cot" Multiplicity="1">
             <OnDelete Action="Cascade" />
@@ -200,6 +236,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_Bang_TaiKhoan">
+          <End Role="TaiKhoan" Type="Self.TaiKhoan" Multiplicity="1" />
+          <End Role="Bang" Type="Self.Bang" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="TaiKhoan">
+              <PropertyRef Name="MaTaiKhoan" />
+            </Principal>
+            <Dependent Role="Bang">
+              <PropertyRef Name="MaNguoiSoHuu" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_GhiChu_TaiKhoan">
           <End Role="TaiKhoan" Type="Self.TaiKhoan" Multiplicity="0..1" />
           <End Role="GhiChu" Type="Self.GhiChu" Multiplicity="*" />
@@ -209,6 +257,18 @@
             </Principal>
             <Dependent Role="GhiChu">
               <PropertyRef Name="MaTaiKhoan" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NhanCuaThe_NhanCuaBang">
+          <End Role="NhanCuaBang" Type="Self.NhanCuaBang" Multiplicity="1" />
+          <End Role="NhanCuaThe" Type="Self.NhanCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NhanCuaBang">
+              <PropertyRef Name="MaNhanCuaBang" />
+            </Principal>
+            <Dependent Role="NhanCuaThe">
+              <PropertyRef Name="MaNhanCuaBang" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -248,6 +308,7 @@
           <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="TaiKhoan" EntityType="Self.TaiKhoan" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="ThanhVienBang" EntityType="Self.ThanhVienBang" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ThanhVienCuaThe" EntityType="Self.ThanhVienCuaThe" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="The" EntityType="Self.The" Schema="dbo" store:Type="Tables" />
           <AssociationSet Name="FK__Bang__MaNguoiSoH__3C69FB99" Association="Self.FK__Bang__MaNguoiSoH__3C69FB99">
             <End Role="TaiKhoan" EntitySet="TaiKhoan" />
@@ -273,13 +334,29 @@
             <End Role="The" EntitySet="The" />
             <End Role="NhanCuaThe" EntitySet="NhanCuaThe" />
           </AssociationSet>
+          <AssociationSet Name="FK__ThanhVien__MaTai__14270015" Association="Self.FK__ThanhVien__MaTai__14270015">
+            <End Role="TaiKhoan" EntitySet="TaiKhoan" />
+            <End Role="ThanhVienCuaThe" EntitySet="ThanhVienCuaThe" />
+          </AssociationSet>
+          <AssociationSet Name="FK__ThanhVien__MaThe__1332DBDC" Association="Self.FK__ThanhVien__MaThe__1332DBDC">
+            <End Role="The" EntitySet="The" />
+            <End Role="ThanhVienCuaThe" EntitySet="ThanhVienCuaThe" />
+          </AssociationSet>
           <AssociationSet Name="FK__The__MaCot__48CFD27E" Association="Self.FK__The__MaCot__48CFD27E">
             <End Role="Cot" EntitySet="Cot" />
             <End Role="The" EntitySet="The" />
           </AssociationSet>
+          <AssociationSet Name="FK_Bang_TaiKhoan" Association="Self.FK_Bang_TaiKhoan">
+            <End Role="TaiKhoan" EntitySet="TaiKhoan" />
+            <End Role="Bang" EntitySet="Bang" />
+          </AssociationSet>
           <AssociationSet Name="FK_GhiChu_TaiKhoan" Association="Self.FK_GhiChu_TaiKhoan">
             <End Role="TaiKhoan" EntitySet="TaiKhoan" />
             <End Role="GhiChu" EntitySet="GhiChu" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NhanCuaThe_NhanCuaBang" Association="Self.FK_NhanCuaThe_NhanCuaBang">
+            <End Role="NhanCuaBang" EntitySet="NhanCuaBang" />
+            <End Role="NhanCuaThe" EntitySet="NhanCuaThe" />
           </AssociationSet>
           <AssociationSet Name="FK_ThanhVienBang_Bang" Association="Self.FK_ThanhVienBang_Bang">
             <End Role="Bang" EntitySet="Bang" />
@@ -290,8 +367,7 @@
             <End Role="ThanhVienBang" EntitySet="ThanhVienBang" />
           </AssociationSet>
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="QL_DUANCANHAN_LITEModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -353,6 +429,7 @@
           <Property Name="TenHienThi" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
           <Property Name="MaMau" Type="String" MaxLength="7" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="Bang" Relationship="Self.FK__NhanCuaBa__MaBan__440B1D61" FromRole="NhanCuaBang" ToRole="Bang" />
+          <NavigationProperty Name="NhanCuaThes" Relationship="QL_DUANCANHAN_LITEModel.FK_NhanCuaThe_NhanCuaBang" FromRole="NhanCuaBang" ToRole="NhanCuaThe" />
         </EntityType>
         <EntityType Name="NhanCuaThe">
           <Key>
@@ -362,6 +439,8 @@
           <Property Name="MaNhanCuaBang" Type="Int32" Nullable="false" />
           <Property Name="MaThe" Type="Int32" Nullable="false" />
           <NavigationProperty Name="The" Relationship="Self.FK__NhanCuaTh__MaThe__75A278F5" FromRole="NhanCuaThe" ToRole="The" />
+          <Property Name="MaNhanCuaThe" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="NhanCuaBang" Relationship="QL_DUANCANHAN_LITEModel.FK_NhanCuaThe_NhanCuaBang" FromRole="NhanCuaThe" ToRole="NhanCuaBang" />
         </EntityType>
         <EntityType Name="sysdiagram">
           <Key>
@@ -385,6 +464,7 @@
           <NavigationProperty Name="Bangs" Relationship="Self.FK__Bang__MaNguoiSoH__3C69FB99" FromRole="TaiKhoan" ToRole="Bang" />
           <NavigationProperty Name="GhiChus" Relationship="Self.FK_GhiChu_TaiKhoan" FromRole="TaiKhoan" ToRole="GhiChu" />
           <NavigationProperty Name="ThanhVienBangs" Relationship="Self.FK_ThanhVienBang_TaiKhoan" FromRole="TaiKhoan" ToRole="ThanhVienBang" />
+          <NavigationProperty Name="ThanhVienCuaThes" Relationship="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaTai__14270015" FromRole="TaiKhoan" ToRole="ThanhVienCuaThe" />
         </EntityType>
         <EntityType Name="ThanhVienBang">
           <Key>
@@ -413,6 +493,7 @@
           <NavigationProperty Name="GhiChus" Relationship="Self.FK__GhiChu__MaThe__5070F446" FromRole="The" ToRole="GhiChu" />
           <NavigationProperty Name="MucTieux" Relationship="Self.FK__MucTieu__MaThe__5441852A" FromRole="The" ToRole="MucTieu" />
           <NavigationProperty Name="NhanCuaThes" Relationship="Self.FK__NhanCuaTh__MaThe__75A278F5" FromRole="The" ToRole="NhanCuaThe" />
+          <NavigationProperty Name="ThanhVienCuaThes" Relationship="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaThe__1332DBDC" FromRole="The" ToRole="ThanhVienCuaThe" />
         </EntityType>
         <Association Name="FK__Bang__MaNguoiSoH__3C69FB99">
           <End Role="TaiKhoan" Type="Self.TaiKhoan" Multiplicity="1" />
@@ -599,7 +680,69 @@
             <End Role="TaiKhoan" EntitySet="TaiKhoans" />
             <End Role="ThanhVienBang" EntitySet="ThanhVienBangs" />
           </AssociationSet>
+          <EntitySet Name="ThanhVienCuaThes" EntityType="QL_DUANCANHAN_LITEModel.ThanhVienCuaThe" />
+          <AssociationSet Name="FK__ThanhVien__MaTai__14270015" Association="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaTai__14270015">
+            <End Role="TaiKhoan" EntitySet="TaiKhoans" />
+            <End Role="ThanhVienCuaThe" EntitySet="ThanhVienCuaThes" />
+          </AssociationSet>
+          <AssociationSet Name="FK__ThanhVien__MaThe__1332DBDC" Association="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaThe__1332DBDC">
+            <End Role="The" EntitySet="Thes" />
+            <End Role="ThanhVienCuaThe" EntitySet="ThanhVienCuaThes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NhanCuaThe_NhanCuaBang" Association="QL_DUANCANHAN_LITEModel.FK_NhanCuaThe_NhanCuaBang">
+            <End Role="NhanCuaBang" EntitySet="NhanCuaBangs" />
+            <End Role="NhanCuaThe" EntitySet="NhanCuaThes" />
+          </AssociationSet>
         </EntityContainer>
+        <EntityType Name="ThanhVienCuaThe">
+          <Key>
+            <PropertyRef Name="MaThanhVienCuaThe" />
+          </Key>
+          <Property Name="MaThanhVienCuaThe" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MaThe" Type="Int32" Nullable="false" />
+          <Property Name="MaTaiKhoan" Type="Int32" Nullable="false" />
+          <Property Name="NgayGan" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="TaiKhoan" Relationship="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaTai__14270015" FromRole="ThanhVienCuaThe" ToRole="TaiKhoan" />
+          <NavigationProperty Name="The" Relationship="QL_DUANCANHAN_LITEModel.FK__ThanhVien__MaThe__1332DBDC" FromRole="ThanhVienCuaThe" ToRole="The" />
+        </EntityType>
+        <Association Name="FK__ThanhVien__MaTai__14270015">
+          <End Type="QL_DUANCANHAN_LITEModel.TaiKhoan" Role="TaiKhoan" Multiplicity="1" />
+          <End Type="QL_DUANCANHAN_LITEModel.ThanhVienCuaThe" Role="ThanhVienCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="TaiKhoan">
+              <PropertyRef Name="MaTaiKhoan" />
+            </Principal>
+            <Dependent Role="ThanhVienCuaThe">
+              <PropertyRef Name="MaTaiKhoan" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__ThanhVien__MaThe__1332DBDC">
+          <End Type="QL_DUANCANHAN_LITEModel.The" Role="The" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="QL_DUANCANHAN_LITEModel.ThanhVienCuaThe" Role="ThanhVienCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="The">
+              <PropertyRef Name="MaThe" />
+            </Principal>
+            <Dependent Role="ThanhVienCuaThe">
+              <PropertyRef Name="MaThe" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NhanCuaThe_NhanCuaBang">
+          <End Type="QL_DUANCANHAN_LITEModel.NhanCuaBang" Role="NhanCuaBang" Multiplicity="1" />
+          <End Type="QL_DUANCANHAN_LITEModel.NhanCuaThe" Role="NhanCuaThe" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NhanCuaBang">
+              <PropertyRef Name="MaNhanCuaBang" />
+            </Principal>
+            <Dependent Role="NhanCuaThe">
+              <PropertyRef Name="MaNhanCuaBang" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -663,6 +806,7 @@
           <EntitySetMapping Name="NhanCuaThes">
             <EntityTypeMapping TypeName="QL_DUANCANHAN_LITEModel.NhanCuaThe">
               <MappingFragment StoreEntitySet="NhanCuaThe">
+                <ScalarProperty Name="MaNhanCuaThe" ColumnName="MaNhanCuaThe" />
                 <ScalarProperty Name="MaNhanCuaBang" ColumnName="MaNhanCuaBang" />
                 <ScalarProperty Name="MaThe" ColumnName="MaThe" />
               </MappingFragment>
@@ -710,6 +854,16 @@
                 <ScalarProperty Name="HanChot" ColumnName="HanChot" />
                 <ScalarProperty Name="DaHoanThanh" ColumnName="DaHoanThanh" />
                 <ScalarProperty Name="ThuTu" ColumnName="ThuTu" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ThanhVienCuaThes">
+            <EntityTypeMapping TypeName="QL_DUANCANHAN_LITEModel.ThanhVienCuaThe">
+              <MappingFragment StoreEntitySet="ThanhVienCuaThe">
+                <ScalarProperty Name="NgayGan" ColumnName="NgayGan" />
+                <ScalarProperty Name="MaTaiKhoan" ColumnName="MaTaiKhoan" />
+                <ScalarProperty Name="MaThe" ColumnName="MaThe" />
+                <ScalarProperty Name="MaThanhVienCuaThe" ColumnName="MaThanhVienCuaThe" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

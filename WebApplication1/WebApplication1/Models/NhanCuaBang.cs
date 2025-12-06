@@ -14,11 +14,19 @@ namespace WebApplication1.Models
     
     public partial class NhanCuaBang
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public NhanCuaBang()
+        {
+            this.NhanCuaThes = new HashSet<NhanCuaThe>();
+        }
+    
         public int MaNhanCuaBang { get; set; }
         public int MaBang { get; set; }
         public string TenHienThi { get; set; }
         public string MaMau { get; set; }
     
         public virtual Bang Bang { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<NhanCuaThe> NhanCuaThes { get; set; }
     }
 }

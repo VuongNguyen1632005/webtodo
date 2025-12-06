@@ -20,6 +20,7 @@ namespace WebApplication1.Models
             this.GhiChus = new HashSet<GhiChu>();
             this.MucTieux = new HashSet<MucTieu>();
             this.NhanCuaThes = new HashSet<NhanCuaThe>();
+            this.ThanhVienCuaThes = new HashSet<ThanhVienCuaThe>();
         }
     
         public int MaThe { get; set; }
@@ -37,5 +38,7 @@ namespace WebApplication1.Models
         public virtual ICollection<MucTieu> MucTieux { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<NhanCuaThe> NhanCuaThes { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<ThanhVienCuaThe> ThanhVienCuaThes { get; set; }
     }
 }

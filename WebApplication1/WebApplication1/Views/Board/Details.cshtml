@@ -244,7 +244,192 @@
         padding: 20px;
         font-style: italic;
     }
+
     .column-action-btn:hover { background: #dc3545; }
+
+    /* CSS cho Labels */
+    .card-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+
+    .card-label {
+        display: inline-block;
+        height: 8px;
+        min-width: 40px;
+        border-radius: 4px;
+    }
+
+    .card-label-full {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* CSS cho Card Members (avatars) */
+    .card-members {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .card-member-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #0079bf;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    /* CSS cho Modal Labels & Members */
+    .modal-section {
+        margin-bottom: 20px;
+    }
+
+    .modal-section-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #5e6c84;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .label-list, .member-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .label-item {
+        padding: 6px 12px;
+        border-radius: 4px;
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .label-item:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .label-item.selected {
+        box-shadow: inset 0 0 0 2px #172b4d;
+    }
+
+    .label-item .fa-check {
+        margin-left: 6px;
+    }
+
+    .member-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.1s;
+        border: 2px solid transparent;
+    }
+
+    .member-item:hover {
+        background: #f0f0f0;
+    }
+
+    .member-item.selected {
+        background: #e3f2fd;
+        border-color: #0079bf;
+    }
+
+    .member-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #0079bf;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .sidebar-section {
+        background: #f4f5f7;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+    }
+
+    .sidebar-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #5e6c84;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .sidebar-btn {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        background: #091e420a;
+        border: none;
+        border-radius: 4px;
+        text-align: left;
+        cursor: pointer;
+        margin-bottom: 6px;
+        transition: background 0.1s;
+    }
+
+    .sidebar-btn:hover {
+        background: #091e4214;
+    }
+
+    .sidebar-btn i {
+        margin-right: 8px;
+        width: 16px;
+    }
+
+    /* Color picker for labels */
+    .color-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .color-option {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.1s;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+
+    .color-option.selected {
+        border-color: #172b4d;
+    }
 </style>
 
 <div class="container-fluid mb-3">
@@ -308,6 +493,17 @@
                             foreach (var the in cot.Thes.OrderBy(t => t.ThuTu))
                             {
                                 <div class="kanban-card" id="card_@the.MaThe" data-id="@the.MaThe">
+                                    <!-- Labels hiển thị trên thẻ -->
+                                    <div class="card-labels" id="cardLabels_@the.MaThe">
+                                        @if (the.NhanCuaThes != null)
+                                        {
+                                            foreach (var nhan in the.NhanCuaThes)
+                                            {
+                                                <span class="card-label" style="background-color: @nhan.NhanCuaBang.MaMau;" title="@nhan.NhanCuaBang.TenHienThi"></span>
+                                            }
+                                        }
+                                    </div>
+
                                     <div class="d-flex">
                                         <div class="me-2 pt-1" style="margin-right: 10px;">
                                             <input type="checkbox" class="card-checkbox stop-prop" data-id="@the.MaThe"
@@ -331,6 +527,20 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Members hiển thị trên thẻ -->
+                                    <div class="card-members" id="cardMembers_@the.MaThe">
+                                        @if (the.ThanhVienCuaThes != null)
+                                        {
+                                            foreach (var tv in the.ThanhVienCuaThes)
+                                            {
+                                                var initials = !string.IsNullOrEmpty(tv.TaiKhoan.HoTen) 
+                                                    ? string.Join("", tv.TaiKhoan.HoTen.Split(' ').Where(s => !string.IsNullOrEmpty(s)).Select(s => s[0])).ToUpper()
+                                                    : tv.TaiKhoan.DiaChiEmail.Substring(0, 2).ToUpper();
+                                                <span class="card-member-avatar" title="@(tv.TaiKhoan.HoTen ?? tv.TaiKhoan.DiaChiEmail)">@initials</span>
+                                            }
+                                        }
+                                    </div>
                                 </div>
                             }
                         }
@@ -351,8 +561,9 @@
     </div>
 </div>
 
+<!-- Modal Chi tiết thẻ -->
 <div class="modal fade" id="cardModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-xl" role="document" style="max-width: 90%;">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 800px;">
         <div class="modal-content">
             <div class="modal-header" style="border-bottom: none;">
                 <input type="text" id="modalCardTitle" class="form-control font-weight-bold" style="font-size: 1.5rem; border: none; background: transparent;" placeholder="Tên thẻ..." @(!canEdit ? "readonly" : "")>
@@ -363,11 +574,43 @@
             <div class="modal-body">
                 <input type="hidden" id="modalCardId">
                 <div class="row">
-                    <!-- Cột trái: Mô tả và Hạn chót -->
-                    <div class="col-md-7">
+                    <!-- Cột trái: Nội dung chính -->
+                    <div class="col-md-8">
+                        <!-- Hiển thị Labels đã gán -->
+                        <div class="modal-section">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="modal-section-title mb-0"><i class="fa fa-tags"></i> Nhãn</div>
+                                @if (canEdit)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnShowLabels">
+                                        <i class="fa fa-plus"></i> Thêm
+                                    </button>
+                                }
+                            </div>
+                            <div id="modalCardLabels" class="label-list">
+                                <!-- Labels sẽ được load bằng JS -->
+                            </div>
+                        </div>
+
+                        <!-- Hiển thị Members đã gán -->
+                        <div class="modal-section">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="modal-section-title mb-0"><i class="fa fa-users"></i> Thành viên</div>
+                                @if (canEdit)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" id="btnShowMembers">
+                                        <i class="fa fa-plus"></i> Thêm
+                                    </button>
+                                }
+                            </div>
+                            <div id="modalCardMembers" class="d-flex flex-wrap" style="gap: 8px;">
+                                <!-- Members sẽ được load bằng JS -->
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label class="font-weight-bold"><i class="fa fa-align-left"></i> Mô tả</label>
-                            <textarea id="modalCardDesc" class="form-control" rows="5" placeholder="Thêm mô tả chi tiết..." @(!canEdit ? "readonly" : "")></textarea>
+                            <textarea id="modalCardDesc" class="form-control" rows="4" placeholder="Thêm mô tả chi tiết..." @(!canEdit ? "readonly" : "")></textarea>
                         </div>
                         <div class="form-group mt-3">
                             <label class="font-weight-bold"><i class="fa fa-calendar"></i> Hạn chót</label>
@@ -375,20 +618,22 @@
                         </div>
                         @if (canEdit)
                         {
-                            <button type="button" class="btn btn-success mt-2" id="btnSaveCard">
-                                <i class="fa fa-save"></i> Lưu thay đổi
-                            </button>
-                            <button class="btn btn-danger mt-2" id="btnDeleteCard">
-                                <i class="fa fa-trash"></i> Xóa thẻ
-                            </button>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-success" id="btnSaveCard">
+                                    <i class="fa fa-save"></i> Lưu thay đổi
+                                </button>
+                                <button class="btn btn-danger" id="btnDeleteCard">
+                                    <i class="fa fa-trash"></i> Xóa thẻ
+                                </button>
+                            </div>
                         }
                     </div>
-                    
-                    <!-- Cột phải: Nhận xét và hoạt động -->
-                    <div class="col-md-5" style="border-left: 1px solid #e0e0e0;">
+
+                    <!-- Cột phải: Nhận xét -->
+                    <div class="col-md-4" style="border-left: 1px solid #e0e0e0;">
                         <div class="comment-section">
                             <h5 class="font-weight-bold mb-3">
-                                <i class="fa fa-comments"></i> Nhận xét và hoạt động
+                                <i class="fa fa-comments"></i> Nhận xét
                             </h5>
                             
                             <!-- Form nhập comment -->
@@ -400,11 +645,63 @@
                             </div>
 
                             <!-- Danh sách comment -->
-                            <div id="commentsList" style="max-height: 400px; overflow-y: auto;">
+                            <div id="commentsList" style="max-height: 300px; overflow-y: auto;">
                                 <!-- Comments sẽ được load bằng JS -->
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chọn Labels -->
+<div class="modal fade" id="labelsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nhãn</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="labelsList" class="label-list" style="flex-direction: column;">
+                    <!-- Labels sẽ được load bằng JS -->
+                </div>
+                <hr>
+                <div class="font-weight-bold mb-2">Tạo nhãn mới</div>
+                <input type="text" id="newLabelName" class="form-control mb-2" placeholder="Tên nhãn...">
+                <div class="color-picker" id="colorPicker">
+                    <div class="color-option selected" data-color="#61bd4f" style="background: #61bd4f;"></div>
+                    <div class="color-option" data-color="#f2d600" style="background: #f2d600;"></div>
+                    <div class="color-option" data-color="#ff9f1a" style="background: #ff9f1a;"></div>
+                    <div class="color-option" data-color="#eb5a46" style="background: #eb5a46;"></div>
+                    <div class="color-option" data-color="#c377e0" style="background: #c377e0;"></div>
+                    <div class="color-option" data-color="#0079bf" style="background: #0079bf;"></div>
+                    <div class="color-option" data-color="#00c2e0" style="background: #00c2e0;"></div>
+                    <div class="color-option" data-color="#51e898" style="background: #51e898;"></div>
+                    <div class="color-option" data-color="#ff78cb" style="background: #ff78cb;"></div>
+                    <div class="color-option" data-color="#344563" style="background: #344563;"></div>
+                </div>
+                <button class="btn btn-primary btn-sm mt-3" id="btnCreateLabel">
+                    <i class="fa fa-plus"></i> Tạo nhãn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chọn Members -->
+<div class="modal fade" id="membersModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thành viên</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="membersList">
+                    <!-- Members sẽ được load bằng JS -->
                 </div>
             </div>
         </div>
@@ -426,13 +723,11 @@
 
             // 0. ĐỔI TÊN BẢNG (chỉ cho owner/editor)
             if (canEdit) {
-                // Click vào tiêu đề => hiện input
                 $("#boardTitleDisplay").click(function(){
                     $(this).hide();
                     $("#boardTitleInput").show().focus().select();
                 });
 
-                // Nhấn Enter hoặc blur => lưu tên mới
                 $("#boardTitleInput").on('blur keypress', function(e){
                     if (e.type === 'blur' || (e.type === 'keypress' && e.which === 13)) {
                         e.preventDefault();
@@ -462,7 +757,6 @@
                     }
                 });
 
-                // ESC => hủy
                 $("#boardTitleInput").keyup(function(e){
                     if (e.which === 27) { // ESC
                         $(this).val($("#boardTitleDisplay").text().trim()).hide();
@@ -577,24 +871,249 @@
                         $("#modalCardTitle").val(data.title);
                         $("#modalCardDesc").val(data.desc); 
                         $("#modalCardDeadline").val(data.deadline);
-                        $("#commentInput").val(""); // Clear comment input
-                        loadComments(data.id); // Load comments
+                        $("#commentInput").val("");
+                        loadComments(data.id);
+                        loadCardLabels(data.id);
+                        loadCardMembers(data.id);
                         $("#cardModal").modal("show");
                     }
                 });
             });
 
-            // 5a. Load comments
+            // ========== LABELS FUNCTIONS =========
+            
+            // Load labels của thẻ hiện tại
+            function loadCardLabels(cardId) {
+                $.get("/Board/GetCardLabels?maThe=" + cardId, function(response) {
+                    if (response && response.success) {
+                        var html = '';
+                        if (response.labels && response.labels.length > 0) {
+                            response.labels.forEach(function(label) {
+                                html += '<span class="card-label-full" style="background-color: ' + label.maMau + ';">' + escapeHtml(label.tenHienThi) + '</span>';
+                            });
+                        } else {
+                            html = '<span class="text-muted small">Chưa có nhãn</span>';
+                        }
+                        $("#modalCardLabels").html(html);
+                    }
+                });
+            }
+
+            // Mở modal chọn labels
+            $("#btnShowLabels").click(function() {
+                var cardId = $("#modalCardId").val();
+                loadLabelsModal(cardId);
+                $("#labelsModal").modal("show");
+            });
+
+            // Load danh sách labels cho modal
+            function loadLabelsModal(cardId) {
+                // Lấy labels của board
+                $.get("/Board/GetBoardLabels?maBang=" + maBang, function(boardLabels) {
+                    // Lấy labels đã gán cho thẻ
+                    $.get("/Board/GetCardLabels?maThe=" + cardId, function(cardLabels) {
+                        var assignedIds = [];
+                        if (cardLabels.success && cardLabels.labels) {
+                            assignedIds = cardLabels.labels.map(function(l) { return l.maNhan; });
+                        }
+
+                        var html = '';
+                        if (boardLabels.success && boardLabels.labels && boardLabels.labels.length > 0) {
+                            boardLabels.labels.forEach(function(label) {
+                                var isSelected = assignedIds.indexOf(label.maNhan) !== -1;
+                                html += '<div class="label-item ' + (isSelected ? 'selected' : '') + '" data-label-id="' + label.maNhan + '" style="background-color: ' + label.maMau + '; display: flex; justify-content: space-between; align-items: center;">';
+                                html += '<span>' + escapeHtml(label.tenHienThi) + '</span>';
+                                if (isSelected) {
+                                    html += '<i class="fa fa-check"></i>';
+                                }
+                                html += '</div>';
+                            });
+                        } else {
+                            html = '<p class="text-muted">Chưa có nhãn nào. Tạo nhãn mới bên dưới.</p>';
+                        }
+                        $("#labelsList").html(html);
+                    });
+                });
+            }
+
+            // Toggle label cho thẻ
+            $(document).on("click", ".label-item", function() {
+                var cardId = $("#modalCardId").val();
+                var labelId = $(this).data("label-id");
+                var $this = $(this);
+
+                $.post("/Board/ToggleCardLabel", { maThe: cardId, maNhan: labelId }, function(response) {
+                    if (response && response.success) {
+                        if (response.action === "added") {
+                            $this.addClass("selected");
+                            if ($this.find(".fa-check").length === 0) {
+                                $this.append('<i class="fa fa-check"></i>');
+                            }
+                        } else {
+                            $this.removeClass("selected");
+                            $this.find(".fa-check").remove();
+                        }
+                        // Cập nhật hiển thị labels trên modal và thẻ
+                        loadCardLabels(cardId);
+                        refreshCardLabelsOnBoard(cardId);
+                    }
+                });
+            });
+
+            // Chọn màu cho label mới
+            $(document).on("click", ".color-option", function() {
+                $(".color-option").removeClass("selected");
+                $(this).addClass("selected");
+            });
+
+            // Tạo label mới
+            $("#btnCreateLabel").click(function() {
+                var name = $("#newLabelName").val().trim();
+                var color = $(".color-option.selected").data("color");
+
+                if (!name) {
+                    alert("Vui lòng nhập tên nhãn!");
+                    return;
+                }
+
+                $.post("/Board/CreateLabel", { maBang: maBang, tenHienThi: name, maMau: color }, function(response) {
+                    if (response && response.success) {
+                        $("#newLabelName").val("");
+                        var cardId = $("#modalCardId").val();
+                        loadLabelsModal(cardId);
+                    } else {
+                        alert(response.message || "Không thể tạo nhãn");
+                    }
+                });
+            });
+
+            // Cập nhật labels trên thẻ trong board
+            function refreshCardLabelsOnBoard(cardId) {
+                $.get("/Board/GetCardLabels?maThe=" + cardId, function(response) {
+                    if (response && response.success) {
+                        var html = '';
+                        if (response.labels && response.labels.length > 0) {
+                            response.labels.forEach(function(label) {
+                                html += '<span class="card-label" style="background-color: ' + label.maMau + ';" title="' + escapeHtml(label.tenHienThi) + '"></span>';
+                            });
+                        }
+                        $("#cardLabels_" + cardId).html(html);
+                    }
+                });
+            }
+
+            // ========== MEMBERS FUNCTIONS ==========
+
+            // Load members của thẻ hiện tại
+            function loadCardMembers(cardId) {
+                $.get("/Board/GetCardMembers?maThe=" + cardId, function(response) {
+                    if (response && response.success) {
+                        var html = '';
+                        if (response.members && response.members.length > 0) {
+                            response.members.forEach(function(member) {
+                                var initials = getInitials(member.hoTen);
+                                html += '<div class="d-flex align-items-center mr-2 mb-1" style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">';
+                                html += '<span class="member-avatar mr-2" style="width: 24px; height: 24px; font-size: 10px;">' + initials + '</span>';
+                                html += '<span class="small">' + escapeHtml(member.hoTen) + '</span>';
+                                html += '</div>';
+                            });
+                        } else {
+                            html = '<span class="text-muted small">Chưa có thành viên</span>';
+                        }
+                        $("#modalCardMembers").html(html);
+                    }
+                });
+            }
+
+            // Mở modal chọn members
+            $("#btnShowMembers").click(function() {
+                var cardId = $("#modalCardId").val();
+                loadMembersModal(cardId);
+                $("#membersModal").modal("show");
+            });
+
+            // Load danh sách members cho modal
+            function loadMembersModal(cardId) {
+                // Lấy tất cả thành viên của board
+                $.get("/Board/GetAvailableMembers?maBang=" + maBang, function(availableMembers) {
+                    // Lấy thành viên đã gán cho thẻ
+                    $.get("/Board/GetCardMembers?maThe=" + cardId, function(cardMembers) {
+                        var assignedIds = [];
+                        if (cardMembers.success && cardMembers.members) {
+                            assignedIds = cardMembers.members.map(function(m) { return m.maTaiKhoan; });
+                        }
+
+                        var html = '';
+                        if (availableMembers.success && availableMembers.members && availableMembers.members.length > 0) {
+                            availableMembers.members.forEach(function(member) {
+                                var isSelected = assignedIds.indexOf(member.maTaiKhoan) !== -1;
+                                var initials = getInitials(member.hoTen);
+                                html += '<div class="member-item ' + (isSelected ? 'selected' : '') + '" data-member-id="' + member.maTaiKhoan + '">';
+                                html += '<span class="member-avatar">' + initials + '</span>';
+                                html += '<div class="member-info">';
+                                html += '<div class="member-name">' + escapeHtml(member.hoTen) + '</div>';
+                                html += '<div class="member-email">' + escapeHtml(member.email) + '</div>';
+                                html += '</div>';
+                                if (isSelected) {
+                                    html += '<i class="fa fa-check text-primary"></i>';
+                                }
+                                html += '</div>';
+                            });
+                        } else {
+                            html = '<p class="text-muted">Không có thành viên nào.</p>';
+                        }
+                        $("#membersList").html(html);
+                    });
+                });
+            }
+
+            // Toggle member cho thẻ
+            $(document).on("click", ".member-item", function() {
+                var cardId = $("#modalCardId").val();
+                var memberId = $(this).data("member-id");
+                var $this = $(this);
+
+                $.post("/Board/ToggleCardMember", { maThe: cardId, maTaiKhoan: memberId }, function(response) {
+                    if (response && response.success) {
+                        if (response.action === "added") {
+                            $this.addClass("selected");
+                            if ($this.find(".fa-check").length === 0) {
+                                $this.append('<i class="fa fa-check text-primary"></i>');
+                            }
+                        } else {
+                            $this.removeClass("selected");
+                            $this.find(".fa-check").remove();
+                        }
+                        // Cập nhật hiển thị members trên modal và thẻ
+                        loadCardMembers(cardId);
+                        refreshCardMembersOnBoard(cardId);
+                    }
+                });
+            });
+
+            // Cập nhật members trên thẻ trong board
+            function refreshCardMembersOnBoard(cardId) {
+                $.get("/Board/GetCardMembers?maThe=" + cardId, function(response) {
+                    if (response && response.success) {
+                        var html = '';
+                        if (response.members && response.members.length > 0) {
+                            response.members.forEach(function(member) {
+                                var initials = getInitials(member.hoTen);
+                                html += '<span class="card-member-avatar" title="' + escapeHtml(member.hoTen) + '">' + initials + '</span>';
+                            });
+                        }
+                        $("#cardMembers_" + cardId).html(html);
+                    }
+                });
+            }
+
+            // ========== COMMENTS FUNCTIONS ==========
+
             function loadComments(cardId) {
-                console.log("loadComments called with cardId:", cardId);
-                
                 $.get("/Board/GetCardComments?maThe=" + cardId, function(response) {
-                    console.log("GetCardComments response:", response);
-                    
                     if (response && response.success) {
                         var html = '';
                         if (response.comments && response.comments.length > 0) {
-                            console.log("Found " + response.comments.length + " comments");
                             response.comments.forEach(function(comment) {
                                 var initials = getInitials(comment.userName);
                                 var timeStr = formatDateTime(comment.createdAt);
@@ -614,73 +1133,40 @@
                                 html += '</div>';
                             });
                         } else {
-                            console.log("No comments found");
                             html = '<div class="no-comments">Chưa có bình luận nào</div>';
                         }
                         $("#commentsList").html(html);
-                        console.log("Comments HTML updated, showing " + response.comments.length + " comments");
-                    } else {
-                        console.error("Failed to load comments:", response);
-                        $("#commentsList").html('<div class="no-comments text-danger">Không thể tải bình luận</div>');
                     }
-                })
-                .fail(function(xhr, status, error) {
-                    console.error("GetCardComments AJAX Error:", status, error);
-                    console.error("Response:", xhr.responseText);
-                    $("#commentsList").html('<div class="no-comments text-danger">Lỗi tải bình luận: ' + error + '</div>');
                 });
             }
 
-            // 5b. Add comment
             $("#btnAddComment").click(function() {
                 var content = $("#commentInput").val().trim();
                 var cardId = $("#modalCardId").val();
-                
-                console.log("Add comment clicked - Content:", content, "CardId:", cardId);
                 
                 if (!content) {
                     alert("Vui lòng nhập nội dung bình luận!");
                     return;
                 }
 
-                if (!cardId) {
-                    alert("Lỗi: Không tìm thấy ID thẻ!");
-                    console.error("CardId is missing!");
-                    return;
-                }
-
-                // Disable button while sending
                 var btn = $(this);
                 var originalText = btn.html();
                 btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Đang gửi...');
 
-                $.post("/Board/AddCardComment", {
-                    maThe: cardId,
-                    content: content
-                })
+                $.post("/Board/AddCardComment", { maThe: cardId, content: content })
                 .done(function(response) {
-                    console.log("AddCardComment Response:", response);
                     if (response && response.success) {
                         $("#commentInput").val("");
-                        // QUAN TRỌNG: Phải gọi loadComments để refresh danh sách
-                        console.log("Loading comments for card:", cardId);
                         loadComments(cardId);
                     } else {
-                        console.error("Failed to add comment:", response);
                         alert(response.message || "Không thể thêm bình luận!");
                     }
-                })
-                .fail(function(xhr, status, error) {
-                    console.error("AJAX Error:", status, error);
-                    console.error("Response Text:", xhr.responseText);
-                    alert("Lỗi khi gửi bình luận: " + error);
                 })
                 .always(function() {
                     btn.prop("disabled", false).html(originalText);
                 });
             });
 
-            // 5c. Delete comment
             window.deleteComment = function(commentId) {
                 if (!confirm("Xóa bình luận này?")) return;
                 
@@ -694,7 +1180,8 @@
                 });
             };
 
-            // Helper functions
+            // ========== HELPER FUNCTIONS ==========
+
             function getInitials(name) {
                 if (!name) return "?";
                 var parts = name.trim().split(" ");
@@ -707,21 +1194,15 @@
             function formatDateTime(dateStr) {
                 if (!dateStr) return "";
                 
-                // Parse date string - có thể là ISO format hoặc .NET JSON date
                 var date;
                 if (typeof dateStr === 'string' && dateStr.indexOf('/Date(') === 0) {
-                    // .NET JSON date format: /Date(1234567890123)/
                     var timestamp = parseInt(dateStr.substr(6));
                     date = new Date(timestamp);
                 } else {
                     date = new Date(dateStr);
                 }
                 
-                // Kiểm tra date hợp lệ
-                if (isNaN(date.getTime())) {
-                    console.error("Invalid date:", dateStr);
-                    return "Không rõ thời gian";
-                }
+                if (isNaN(date.getTime())) return "Không rõ thời gian";
                 
                 var now = new Date();
                 var diffMs = now - date;
@@ -745,23 +1226,18 @@
 
             function escapeHtml(text) {
                 if (!text) return "";
-                var map = {
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#039;'
-                };
+                var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
                 return text.replace(/[&<>"']/g, function(m) { return map[m]; });
             }
 
-            // Enter để gửi comment
             $("#commentInput").keypress(function(e) {
                 if (e.which == 13 && !e.shiftKey) {
                     e.preventDefault();
                     $("#btnAddComment").click();
                 }
             });
+
+            // ========== SAVE & DELETE CARD ==========
 
             $("#btnSaveCard").click(function () {
                 if (!canEdit) {
@@ -774,30 +1250,21 @@
                 var desc = $("#modalCardDesc").val().trim();
                 var deadline = $("#modalCardDeadline").val();
 
-                // Validate
                 if (!title) {
                     alert("Vui lòng nhập tiêu đề thẻ!");
                     $("#modalCardTitle").focus();
                     return;
                 }
 
-                // Disable button và hiển thị loading
                 var btn = $(this);
                 var originalText = btn.html();
                 btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Đang lưu...');
 
-                $.post("/Board/UpdateCardDetails", {
-                    id: cardId,
-                    title: title,
-                    desc: desc,
-                    deadline: deadline
-                }, function (response) {
+                $.post("/Board/UpdateCardDetails", { id: cardId, title: title, desc: desc, deadline: deadline }, function (response) {
                     if (response && response.success) {
-                        // Cập nhật UI ngay không cần reload
                         var card = $("#card_" + cardId);
                         card.find(".card-title").text(title);
                         
-                        // Cập nhật icon mô tả
                         if (desc) {
                             if (card.find(".card-desc-icon").length === 0) {
                                 card.find(".card-infos").prepend('<div class="card-desc-icon small text-muted"><i class="fa fa-align-left"></i></div>');
@@ -806,7 +1273,6 @@
                             card.find(".card-desc-icon").remove();
                         }
 
-                        // Cập nhật deadline
                         if (deadline) {
                             var parts = deadline.split("-");
                             var displayDate = parts[2] + "/" + parts[1];
@@ -819,26 +1285,17 @@
                             card.find(".card-deadline").remove();
                         }
 
-                        // Đóng modal
                         $("#cardModal").modal("hide");
-                        
-                        // Thông báo thành công
                         showNotification("Đã lưu thay đổi!", "success");
                     } else {
                         alert(response.message || "Không thể lưu thay đổi!");
                     }
                 })
-                .fail(function(xhr, status, error) {
-                    console.error("Error:", error);
-                    alert("Lỗi khi lưu: " + error);
-                })
                 .always(function() {
-                    // Restore button
                     btn.prop("disabled", false).html(originalText);
                 });
             });
 
-            // Notification helper
             function showNotification(message, type) {
                 var alertClass = type === "success" ? "alert-success" : "alert-danger";
                 var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
@@ -847,12 +1304,7 @@
                     '</div>');
                 
                 $("body").append(notification);
-                
-                setTimeout(function() {
-                    notification.fadeOut(function() {
-                        $(this).remove();
-                    });
-                }, 3000);
+                setTimeout(function() { notification.fadeOut(function() { $(this).remove(); }); }, 3000);
             }
 
             $("#btnDeleteCard").click(function () {
@@ -863,64 +1315,11 @@
                         if (r.success) {
                             var card = $("#card_" + cardId);
                             var columnId = card.closest(".card-list").attr("id").replace("col-", "");
-                            
-                            // Xóa thẻ khỏi DOM
                             card.remove();
-                            
-                            // Cập nhật badge
                             updateColumnBadge(columnId);
-                            
-                            // Đóng modal
                             $("#cardModal").modal("hide");
                         }
                     });
-                }
-            });
-
-            // 6. EDIT BẢNG TÊN (NHƯ TREllo)
-            var originalBoardName = "@Model.TenBang";
-            var isEditingTitle = false;
-
-            function setBoardTitleEditable(editable) {
-                isEditingTitle = editable;
-                var titleElement = $("#boardTitleElement");
-                var inputElement = $("#boardTitleInput");
-
-                if (editable) {
-                    titleElement.hide();
-                    inputElement.val(originalBoardName).show().focus();
-                } else {
-                    titleElement.show();
-                    inputElement.hide();
-                }
-            }
-
-            $("#boardTitleElement").click(function() {
-                if (!canEdit) return;
-                setBoardTitleEditable(true);
-            });
-
-            $("#boardTitleInput").on("blur keypress", function(e) {
-                if (e.type === "blur" || e.which === 13) { // Enter key or blur event
-                    var newTitle = $(this).val().trim();
-                    if (newTitle && newTitle != originalBoardName) {
-                        $.post("/Board/UpdateBoardName", { maBang: maBang, tenBang: newTitle }, function(response) {
-                            if (response.success) {
-                                originalBoardName = newTitle;
-                                $("#boardTitleElement").text(newTitle);
-                                setBoardTitleEditable(false);
-                            }
-                        });
-                    } else {
-                        setBoardTitleEditable(false);
-                    }
-                }
-            });
-
-            // ESC để hủy chỉnh sửa tên bảng
-            $(document).keyup(function(e) {
-                if (e.which === 27) { // ESC key
-                    setBoardTitleEditable(false);
                 }
             });
         });

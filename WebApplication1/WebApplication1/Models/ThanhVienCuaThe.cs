@@ -12,13 +12,14 @@ namespace WebApplication1.Models
     using System;
     using System.Collections.Generic;
     
-    public partial class NhanCuaThe
+    public partial class ThanhVienCuaThe
     {
-        public int MaNhanCuaBang { get; set; }
+        public int MaThanhVienCuaThe { get; set; }
         public int MaThe { get; set; }
-        public int MaNhanCuaThe { get; set; }
+        public int MaTaiKhoan { get; set; }
+        public Nullable<System.DateTime> NgayGan { get; set; }
     
+        public virtual TaiKhoan TaiKhoan { get; set; }
         public virtual The The { get; set; }
-        public virtual NhanCuaBang NhanCuaBang { get; set; }
     }
 }
