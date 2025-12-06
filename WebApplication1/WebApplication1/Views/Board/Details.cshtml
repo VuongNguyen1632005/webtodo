@@ -313,13 +313,6 @@
                                 <i class="fa fa-comments"></i> Nhận xét và hoạt động
                             </h5>
                             
-                            <!-- Hiển thị chi tiết (collapse toggle) -->
-                            <div class="mb-3">
-                                <button class="btn btn-sm btn-outline-secondary btn-block" type="button" data-toggle="collapse" data-target="#detailsSection">
-                                    Hiển chi tiết
-                                </button>
-                            </div>
-
                             <!-- Form nhập comment -->
                             <div class="mb-3">
                                 <textarea id="commentInput" class="form-control" rows="3" placeholder="Viết bình luận..."></textarea>
@@ -427,10 +420,15 @@
 
             // 5a. Load comments
             function loadComments(cardId) {
+                console.log("loadComments called with cardId:", cardId);
+                
                 $.get("/Board/GetCardComments?maThe=" + cardId, function(response) {
+                    console.log("GetCardComments response:", response);
+                    
                     if (response && response.success) {
                         var html = '';
                         if (response.comments && response.comments.length > 0) {
+                            console.log("Found " + response.comments.length + " comments");
                             response.comments.forEach(function(comment) {
                                 var initials = getInitials(comment.userName);
                                 var timeStr = formatDateTime(comment.createdAt);
@@ -450,10 +448,20 @@
                                 html += '</div>';
                             });
                         } else {
+                            console.log("No comments found");
                             html = '<div class="no-comments">Chưa có bình luận nào</div>';
                         }
                         $("#commentsList").html(html);
+                        console.log("Comments HTML updated, showing " + response.comments.length + " comments");
+                    } else {
+                        console.error("Failed to load comments:", response);
+                        $("#commentsList").html('<div class="no-comments text-danger">Không thể tải bình luận</div>');
                     }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error("GetCardComments AJAX Error:", status, error);
+                    console.error("Response:", xhr.responseText);
+                    $("#commentsList").html('<div class="no-comments text-danger">Lỗi tải bình luận: ' + error + '</div>');
                 });
             }
 
@@ -462,21 +470,47 @@
                 var content = $("#commentInput").val().trim();
                 var cardId = $("#modalCardId").val();
                 
+                console.log("Add comment clicked - Content:", content, "CardId:", cardId);
+                
                 if (!content) {
                     alert("Vui lòng nhập nội dung bình luận!");
                     return;
                 }
 
+                if (!cardId) {
+                    alert("Lỗi: Không tìm thấy ID thẻ!");
+                    console.error("CardId is missing!");
+                    return;
+                }
+
+                // Disable button while sending
+                var btn = $(this);
+                var originalText = btn.html();
+                btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Đang gửi...');
+
                 $.post("/Board/AddCardComment", {
                     maThe: cardId,
                     content: content
-                }, function(response) {
+                })
+                .done(function(response) {
+                    console.log("AddCardComment Response:", response);
                     if (response && response.success) {
                         $("#commentInput").val("");
+                        // QUAN TRỌNG: Phải gọi loadComments để refresh danh sách
+                        console.log("Loading comments for card:", cardId);
                         loadComments(cardId);
                     } else {
+                        console.error("Failed to add comment:", response);
                         alert(response.message || "Không thể thêm bình luận!");
                     }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    console.error("Response Text:", xhr.responseText);
+                    alert("Lỗi khi gửi bình luận: " + error);
+                })
+                .always(function() {
+                    btn.prop("disabled", false).html(originalText);
                 });
             });
 
@@ -506,7 +540,23 @@
 
             function formatDateTime(dateStr) {
                 if (!dateStr) return "";
-                var date = new Date(dateStr);
+                
+                // Parse date string - có thể là ISO format hoặc .NET JSON date
+                var date;
+                if (typeof dateStr === 'string' && dateStr.indexOf('/Date(') === 0) {
+                    // .NET JSON date format: /Date(1234567890123)/
+                    var timestamp = parseInt(dateStr.substr(6));
+                    date = new Date(timestamp);
+                } else {
+                    date = new Date(dateStr);
+                }
+                
+                // Kiểm tra date hợp lệ
+                if (isNaN(date.getTime())) {
+                    console.error("Invalid date:", dateStr);
+                    return "Không rõ thời gian";
+                }
+                
                 var now = new Date();
                 var diffMs = now - date;
                 var diffMins = Math.floor(diffMs / 60000);

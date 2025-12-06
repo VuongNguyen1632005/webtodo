@@ -9,7 +9,7 @@ namespace WebApplication1.Controllers
     [Authorize] // Bắt buộc đăng nhập
     public class BoardController : Controller
     {
-        private QL_DUANCANHAN_LITEEntities db = new QL_DUANCANHAN_LITEEntities();
+        private QL_DUANCANHAN_LITEEntities1 db = new QL_DUANCANHAN_LITEEntities1();
 
         #region Hàm helper kiểm tra quyền
 
@@ -554,27 +554,54 @@ namespace WebApplication1.Controllers
             try
             {
                 int userId = GetCurrentUserId();
-                var currentUser = db.TaiKhoans.Find(userId);
-                
-                var comments = db.GhiChus
+                var currentUser = db.TaiKhoans.FirstOrDefault(u => u.MaTaiKhoan == userId);
+
+                // Load comments vào memory để tránh lỗi provider khi join navigation
+                var commentsRaw = db.GhiChus
                     .Where(g => g.MaThe == maThe)
                     .OrderByDescending(g => g.NgayTao)
-                    .Select(g => new
-                    {
-                        id = g.MaGhiChu,
-                        content = g.NoiDung,
-                        createdAt = g.NgayTao,
-                        // Tạm thời dùng email làm tên người comment
-                        // Sau này có thể thêm quan hệ với TaiKhoan nếu muốn
-                        userName = "Người dùng"
-                    })
                     .ToList();
+
+                // Lấy danh sách user liên quan
+                var userIds = commentsRaw.Where(c => c.MaTaiKhoan.HasValue)
+                                          .Select(c => c.MaTaiKhoan.Value)
+                                          .Distinct()
+                                          .ToList();
+                var users = db.TaiKhoans
+                              .Where(t => userIds.Contains(t.MaTaiKhoan))
+                              .ToDictionary(t => t.MaTaiKhoan);
+
+                var comments = commentsRaw.Select(c =>
+                {
+                    string name = "Người dùng";
+                    if (c.MaTaiKhoan.HasValue && users.TryGetValue(c.MaTaiKhoan.Value, out var tk))
+                    {
+                        name = !string.IsNullOrWhiteSpace(tk.HoTen)
+                            ? tk.HoTen
+                            : (tk.DiaChiEmail?.Split('@').FirstOrDefault() ?? "Người dùng");
+                    }
+                    else if (currentUser != null)
+                    {
+                        name = !string.IsNullOrWhiteSpace(currentUser.HoTen)
+                            ? currentUser.HoTen
+                            : (currentUser.DiaChiEmail?.Split('@').FirstOrDefault() ?? "Bạn");
+                    }
+                    return new
+                    {
+                        id = c.MaGhiChu,
+                        content = c.NoiDung,
+                        createdAt = c.NgayTao,
+                        userName = name
+                    };
+                }).ToList();
 
                 return Json(new
                 {
                     success = true,
-                    comments = comments,
-                    currentUserName = currentUser?.HoTen ?? "Bạn"
+                    comments,
+                    currentUserName = currentUser != null
+                        ? (!string.IsNullOrWhiteSpace(currentUser.HoTen) ? currentUser.HoTen : (currentUser.DiaChiEmail?.Split('@').FirstOrDefault() ?? "Bạn"))
+                        : "Bạn"
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
@@ -608,10 +635,11 @@ namespace WebApplication1.Controllers
                 }
 
                 var currentUser = db.TaiKhoans.Find(userId);
-                
+
                 var comment = new GhiChu
                 {
                     MaThe = maThe,
+                    MaTaiKhoan = userId,
                     NoiDung = content.Trim(),
                     NgayTao = DateTime.Now
                 };
@@ -627,7 +655,8 @@ namespace WebApplication1.Controllers
                         id = comment.MaGhiChu,
                         content = comment.NoiDung,
                         createdAt = comment.NgayTao,
-                        userName = currentUser?.HoTen ?? "Bạn"
+                        userName = currentUser?.HoTen ?? "Bạn",
+                        userAvatar = currentUser?.AnhDaiDien
                     }
                 });
             }

@@ -18,7 +18,9 @@ namespace WebApplication1.Models
         public int MaThe { get; set; }
         public string NoiDung { get; set; }
         public Nullable<System.DateTime> NgayTao { get; set; }
+        public Nullable<int> MaTaiKhoan { get; set; }
     
         public virtual The The { get; set; }
+        public virtual TaiKhoan TaiKhoan { get; set; }
     }
 }

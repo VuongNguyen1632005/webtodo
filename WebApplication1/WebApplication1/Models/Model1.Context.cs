@@ -13,10 +13,10 @@ namespace WebApplication1.Models
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
     
-    public partial class QL_DUANCANHAN_LITEEntities : DbContext
+    public partial class QL_DUANCANHAN_LITEEntities1 : DbContext
     {
-        public QL_DUANCANHAN_LITEEntities()
-            : base("name=QL_DUANCANHAN_LITEEntities")
+        public QL_DUANCANHAN_LITEEntities1()
+            : base("name=QL_DUANCANHAN_LITEEntities1")
         {
         }
     
@@ -33,7 +33,7 @@ namespace WebApplication1.Models
         public virtual DbSet<NhanCuaThe> NhanCuaThes { get; set; }
         public virtual DbSet<sysdiagram> sysdiagrams { get; set; }
         public virtual DbSet<TaiKhoan> TaiKhoans { get; set; }
-        public virtual DbSet<The> Thes { get; set; }
         public virtual DbSet<ThanhVienBang> ThanhVienBangs { get; set; }
+        public virtual DbSet<The> Thes { get; set; }
     }
 }

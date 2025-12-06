@@ -10,7 +10,7 @@ namespace WebApplication1.Controllers
     [Authorize]
     public class HomeController : Controller
     {
-        private QL_DUANCANHAN_LITEEntities db = new QL_DUANCANHAN_LITEEntities();
+        private QL_DUANCANHAN_LITEEntities1 db = new QL_DUANCANHAN_LITEEntities1();
 
         public ActionResult Index()
         {

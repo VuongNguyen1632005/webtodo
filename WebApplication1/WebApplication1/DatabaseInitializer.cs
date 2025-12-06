@@ -6,9 +6,9 @@ using WebApplication1.Models;
 namespace WebApplication1
 {
     // Database Initializer ?? t? ??ng t?o DB và seed data
-    public class DatabaseInitializer : CreateDatabaseIfNotExists<QL_DUANCANHAN_LITEEntities>
+    public class DatabaseInitializer : CreateDatabaseIfNotExists<QL_DUANCANHAN_LITEEntities1>
     {
-        protected override void Seed(QL_DUANCANHAN_LITEEntities context)
+        protected override void Seed(QL_DUANCANHAN_LITEEntities1 context)
         {
             // Ki?m tra xem ?ã có user ch?a
             if (!context.TaiKhoans.Any())

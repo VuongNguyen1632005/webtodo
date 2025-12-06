@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="1d4deaa4e19d408ab0058d5b28f91e19" Name="Diagram1">
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.Bang" Width="1.5" PointX="3" PointY="6.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.Cot" Width="1.5" PointX="5.25" PointY="5.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.GhiChu" Width="1.5" PointX="9.75" PointY="4.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.MucTieu" Width="1.5" PointX="9.75" PointY="7.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.NhanCuaBang" Width="1.5" PointX="5.25" PointY="9.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.NhanCuaThe" Width="1.5" PointX="9.75" PointY="10.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.sysdiagram" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.TaiKhoan" Width="1.5" PointX="0.75" PointY="6.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.ThanhVienBang" Width="1.5" PointX="5.25" PointY="2" IsExpanded="true" />
+        <EntityTypeShape EntityType="QL_DUANCANHAN_LITEModel.The" Width="1.5" PointX="7.5" PointY="5.25" IsExpanded="true" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__Bang__MaNguoiSoH__3C69FB99" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__Cot__MaBang__412EB0B6" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__NhanCuaBa__MaBan__440B1D61" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK_ThanhVienBang_Bang" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__The__MaCot__48CFD27E" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__GhiChu__MaThe__5070F446" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK_GhiChu_TaiKhoan" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__MucTieu__MaThe__5441852A" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK__NhanCuaTh__MaThe__75A278F5" ManuallyRouted="false" />
+        <AssociationConnector Association="QL_DUANCANHAN_LITEModel.FK_ThanhVienBang_TaiKhoan" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

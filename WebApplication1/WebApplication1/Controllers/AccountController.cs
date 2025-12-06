@@ -9,7 +9,7 @@ namespace WebApplication1.Controllers
 {
     public class AccountController : Controller
     {
-        private QL_DUANCANHAN_LITEEntities db = new QL_DUANCANHAN_LITEEntities();
+        private QL_DUANCANHAN_LITEEntities1 db = new QL_DUANCANHAN_LITEEntities1();
 
         // Trang Đăng Ký (GET)
         public ActionResult Register()
